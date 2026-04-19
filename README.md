@@ -176,7 +176,7 @@ OpenACMI is designed to be layered and extensible. The core data pipeline has no
 - [ ] Display of radar locks
 - [ ] Events Log and visualization
 - [ ] Weapons employment log and shot analysis
-- [ ] Terrain elevation data
+- [ ] Localization
 - [ ] Tile map support - stream satellite or terrain imagery from NASA, Maptiler, Stadia, or any XYZ tile provider
 - [ ] Use local game terrain heightmaps for enhanced 3D visualization
 - [ ] Multi-session overlay (compare two recordings)
