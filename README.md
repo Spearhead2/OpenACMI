@@ -33,7 +33,6 @@
 - Supports all object types: aircraft, helicopters, ground vehicles, ships, weapons, projectiles, navaids, static objects
 - Parses all documented properties - radar, engagement ranges, G-forces, fuel, control surfaces, pilot biometrics, and more
 - Delta-state handling - omitted fields correctly carry forward from previous frames
-- Full event log: messages, bookmarks, takeoff/landing, kills, timeouts
 - Loads plain `.acmi`, ZIP-compressed `.acmi.zip`, and auto-detects format from file contents
 
 ### Real-Time Telemetry
@@ -256,5 +255,4 @@ You are free to use, modify, and distribute OpenACMI for any purpose, including 
 ---
 
 *OpenACMI is an independent open-source project and is not affiliated with Tacview or RaiaSoftware.*  
-*Yes, AI was used to help create this project, welcome to 2026 🤖*  
 *© Amir "Spearhead" Levy & Contributors*  
