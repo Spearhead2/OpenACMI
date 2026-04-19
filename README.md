@@ -168,6 +168,7 @@ OpenACMI is designed to be layered and extensible. The core data pipeline has no
 
 - [ ] Windows, Linux, macOS release builds
 - [ ] Exports of object telemetry to .csv
+- [ ] Support for flat world non-real terrains for sims like Nuclear Option
 - [ ] Charting of object telemetry
 - [ ] Performance Improvements
 - [ ] Save live data to file
