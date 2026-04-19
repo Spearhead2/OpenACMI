@@ -1,6 +1,6 @@
 
 # OpenACMI
-<img src="Logo.png" width="600">
+<img src="LogoWide.png" width="850">
 
 **Free, open-source ACMI flight recording viewer and real-time telemetry monitor.**
 
