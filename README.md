@@ -248,7 +248,7 @@ You are free to use, modify, and distribute OpenACMI for any purpose, including 
 
 ## Acknowledgements
 
-- [Tacview](https://www.tacview.net/) by Frantz 'Vyrtuoz' Raia - for the inspiration and ACMI format specification that makes this possible. Also - the 3D model library
+- [Tacview](https://www.tacview.net/) by Frantz 'Vyrtuoz' Raia - for the inspiration and ACMI format specification that makes this possible. <!-- Also - the 3D model library -->
 - The Falcon BMS, DCS World, and IL-2 communities - for years of ACMI tooling, exporters, and feedback
 - [Natural Earth](https://www.naturalearthdata.com/) - country border data
 - [NASA Earthdata / GIBS](https://earthdata.nasa.gov/) - satellite imagery
