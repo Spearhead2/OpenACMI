@@ -1,0 +1,45 @@
+[workspace]
+resolver = "2"
+members = ["crates/acmi-core", "crates/acmi-io", "crates/acmi-terrain", "crates/acmi-render", "crates/openacmi"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "A community-built alternative to Tacview: replay flights, analyse engagements and monitor live ACMI 2.x telemetry."
+
+[workspace.dependencies]
+acmi-core = { path = "crates/acmi-core" }
+acmi-io = { path = "crates/acmi-io" }
+acmi-render = { path = "crates/acmi-render" }
+acmi-terrain = { path = "crates/acmi-terrain" }
+
+bytemuck = { version = "1", features = ["derive"] }
+directories = "6"
+eframe = { version = "0.37", default-features = false, features = ["wgpu", "default_fonts", "system_fonts", "clipboard", "wayland", "x11", "persistence"] }
+egui = "0.37"
+env_logger = { version = "0.11", default-features = false, features = ["auto-color", "humantime"] }
+gltf = { version = "1.4", default-features = false, features = ["utils"] }
+glam = { version = "0.34", features = ["bytemuck"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+log = "0.4"
+rfd = "0.18"
+rustc-hash = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+toml = "1"
+ureq = "3"
+wgpu = "30"
+zip = { version = "9", default-features = false, features = ["deflate"] }
+
+[profile.dev]
+opt-level = 1
+
+# Dependencies (wgpu, egui, image decoding) are unusably slow unoptimised.
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+lto = "thin"
+codegen-units = 4

@@ -1,0 +1,18 @@
+[package]
+name = "acmi-render"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "wgpu renderer for the OpenACMI 3D view: globe, grid, borders, trails and object meshes."
+
+[dependencies]
+acmi-core.workspace = true
+acmi-terrain.workspace = true
+bytemuck.workspace = true
+glam.workspace = true
+gltf.workspace = true
+image.workspace = true
+log.workspace = true
+rustc-hash.workspace = true
+thiserror.workspace = true
+wgpu.workspace = true

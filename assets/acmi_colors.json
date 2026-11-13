@@ -1,0 +1,113 @@
+{
+	"Black": {
+		"name": "Black",
+
+		"display_color": "#000000",
+
+		"trail_color_main": "#000000",
+		"trail_color_tails":"#00000000",
+		
+		"label_text":       "#000000",
+		"label_border":     "#000000",
+		"label_line":       "#000000",
+		"label_background": "#ffffff"
+	},
+
+	"White": {
+		"name": "White",
+
+		"display_color": "#ffffff",
+
+		"trail_color_main": "#ffffff",
+		"trail_color_tails":"#ffffff00",
+		
+		"label_text":       "#000000",
+		"label_border":     "#000000",
+		"label_line":       "#ffffff",
+		"label_background": "#ffffff"
+	},
+
+	"Blue":{
+		"name": "Blue",
+
+		"display_color": "#3b90ff",
+
+		"trail_color_main": "#3b90ff",
+		"trail_color_tails":"#3b90ff00",
+		
+		"label_text":       "#3b90ff",
+		"label_border":     "#3b90ff",
+		"label_line":       "#3b90ff",
+		"label_background": "#ffffff"
+	},
+
+	"Red":{
+		"name": "Red",
+
+		"display_color": "#ff4d4d",
+
+		"trail_color_main": "#ff4d4d",
+		"trail_color_tails":"#ff4d4d00",
+		
+		"label_text":       "#ff4d4d",
+		"label_border":     "#ff4d4d",
+		"label_line":       "#ff4d4d",
+		"label_background": "#ffffff"
+	},
+
+	"Green":{
+		"name": "Green",
+
+		"display_color": "#73ff73",
+
+		"trail_color_main": "#73ff73",
+		"trail_color_tails":"#73ff7300",
+		
+		"label_text":       "#2e662e",
+		"label_border":     "#2e662e",
+		"label_line":       "#2e662e",
+		"label_background": "#ffffff"
+	},
+
+	"Yellow":{
+		"name": "Yellow",
+
+		"display_color": "#dbd400",
+
+		"trail_color_main": "#dbd400",
+		"trail_color_tails":"#dbd40000",
+		
+		"label_text":       "#403e00",
+		"label_border":     "#403e00",
+		"label_line":       "#dbd400",
+		"label_background": "#ffffff"
+	},
+
+	"Orange": {
+		"name": "Orange",
+
+		"display_color": "#ffb318",
+
+		"trail_color_main": "#ffb318",
+		"trail_color_tails":"#ffb318",
+		
+		"label_text":       "#ffb318",
+		"label_border":     "#ffb318",
+		"label_line":       "#ffb318",
+		"label_background": "#ffffff"
+	},
+	
+	"Violet": { 
+		"name": "Violet",
+
+		"display_color": "#8e4dff",
+
+		"trail_color_main": "#8e4dff",
+		"trail_color_tails":"#8e4dff00",
+		
+		"label_text":       "#8e4dff",
+		"label_border":     "#8e4dff",
+		"label_line":       "#8e4dff",
+		"label_background": "#ffffff"
+	}
+}

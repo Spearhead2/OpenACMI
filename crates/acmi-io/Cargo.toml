@@ -1,0 +1,12 @@
+[package]
+name = "acmi-io"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "File loading/saving (plain and zipped ACMI) and the real-time telemetry client."
+
+[dependencies]
+acmi-core.workspace = true
+log.workspace = true
+thiserror.workspace = true
+zip.workspace = true

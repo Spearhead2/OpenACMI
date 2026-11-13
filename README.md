@@ -1,10 +1,11 @@
-
 # OpenACMI
 <img src="LogoWide.png" width="850">
 
 **Free, open-source ACMI flight recording viewer and real-time telemetry monitor.**
 
 > A community-built alternative to Tacview - replay your flights, analyse engagements, and monitor live telemetry from any simulator or data source that speaks the ACMI 2.x protocol.
+
+<img src="docs/screenshot.png" width="850" alt="OpenACMI following an F-16 over Nevada, with telemetry, graphs and a comparison against a second aircraft">
 
 ---
 
@@ -14,181 +15,168 @@
 
 - **Free, forever.** No subscriptions, no feature tiers.
 - **Open source.** Understand exactly what happens to your data. Extend it, fork it, contribute back.
-- **Cross-platform.** Runs on Windows, Linux, and macOS.
-- **Full ACMI 2.x support.** Any simulator that can export to Tacview can export to OpenACMI - DCS World, Falcon BMS, IL-2, X-Plane, FSX, and more.
+- **Full ACMI 2.x support.** Any simulator that can export to Tacview can be viewed in OpenACMI - DCS World, Falcon BMS, IL-2, X-Plane, MSFS, and more.
 - **Real-time streaming.** Connect directly to a live telemetry server and watch engagements unfold as they happen.
-- **Built on the Godot Game Engine.** Free Open Source game engine in a great state to serve the purpose of this task.
+- **Native and fast.** Written in Rust on [wgpu](https://wgpu.rs/) and [egui](https://www.egui.rs/): a single executable, no runtime to install, and recordings load without throwing data away.
+
+---
+
+## Download
+
+Get the latest Windows build from the [**Releases page**](https://github.com/Spearhead2/OpenACMI/releases/latest), unzip it anywhere and run `OpenACMI.exe`. Keep the `assets` folder next to the executable.
+
+Then **File › Open** an `.acmi` file (plain or zipped), or drop one onto the window. A small synthetic recording is included as `samples/demo.acmi`.
+
+You need a GPU with DirectX 12, Vulkan or Metal. Terrain and satellite imagery are streamed from the internet the first time you look at a place and kept on disk afterwards; everything else works offline.
+
+Linux and macOS are not packaged yet. The code is meant to be portable, but so far it has only been built and tested on Windows - see [Building from source](#building-from-source) if you want to try.
+
 ---
 
 ## Features
 
-### 3D Globe Visualisation
-- Photorealistic Earth sphere with real-world country borders and lat/lon grid
-- Accurate object placement and orientation using geodetic coordinate math
-- Automatic projection of flat simulated worlds to the 3D globe
-- Smart model scaling - objects remain visible at any zoom level
+### 3D globe
+- The whole Earth with country borders and a latitude / longitude grid, accurate at any scale from orbit down to a few metres from an aircraft
+- **Streamed 3D terrain** from real elevation data, including land below sea level such as the Dead Sea
+- **Satellite imagery** draped over the terrain, or a choice of elevation colour schemes (natural, atlas, arid, greyscale, dark)
+- A physically based atmosphere: sky, haze with distance, and red light near the terminator
+- The sun where it really was at the recording's date and time
 
-### ACMI 2.x Parser
-- Full implementation of the ACMI 2.2 specification
-- Supports all object types: aircraft, helicopters, ground vehicles, ships, weapons, projectiles, navaids, static objects
-- Parses all documented properties - radar, engagement ranges, G-forces, fuel, control surfaces, pilot biometrics, and more
-- Delta-state handling - omitted fields correctly carry forward from previous frames
-- Loads plain `.acmi`, ZIP-compressed `.acmi.zip`, and auto-detects format from file contents
+### Recordings
+- Full ACMI 2.x parser: every object type, every documented property, kept as a time series
+- Plain `.acmi`, zipped `.acmi`, and `.zip.acmi` detected from the file's contents
+- Lossless loading by default, **Save As** that round-trips everything, and CSV export of an object's telemetry
+- Delta-state handling, line continuations and recycled object ids
 
-### Real-Time Telemetry
-- Connects to any Tacview-compatible real-time telemetry server
-- Full handshake protocol implementation
-- Displays live data as it streams and saves it to file
-- Seamlessly transitions between live and recorded playback
+### Real-time telemetry
+- Connects to any Tacview-compatible real-time telemetry server, including the password handshake
+- Live data can be scrubbed, paused and saved like a recording
 
-### Timeline & Playback
-- Scrub through any recording with a timeline slider
-- Smooth interpolation between snapshots for fluid playback
-- Frame-step forward and backward
-- All object visibility correctly driven by spawn/removal times - missiles appear when fired and disappear on impact
+### Objects and trails
+- 3D models chosen automatically from each object's name and type, in `.glb` or `.obj`, coloured by coalition
+- **Ribbon trails** for aircraft and helicopters: a band in the plane of the wings, dark on top and light underneath, so rolls are visible at a glance
+- Line trails for everything else, with altitude lines dropped to the ground
+- Labels that never overlap, and objects that stay visible from any distance
 
-### 3D Models
-- Automatic model resolution: exact name matching, variant suffix stripping, type-tag fallback
-- Coalition-aware object coloring - blue, red, neutral forces are visually distinct at a glance
-- Bring your own `.obj` models - drop them in `Data/Meshes/` and they're picked up automatically
+### Analysis
+- **Telemetry panels** for a primary and a secondary object: position, attitude, speeds, Mach, G, AOA, turn rate and every other recorded property
+- **Graphs** of any of those against time, for each object
+- A **comparison graph** that overlays both objects and plots what relates them: distance, closure rate, bearing to target and altitude difference
+- **Derived data** where a recording lacks it - IAS, CAS, TAS, Mach, G and AOA are estimated from the flight path and standard atmosphere, and always clearly marked `DERIVED`
+- Event log with jump-to-event, and marks on the timeline
 
-### Camera Modes
-- **Global orbit** - rotate around the Earth freely
-- **Tracking** - follow any object from behind with adjustable offset
-- **Cockpit** - ride inside the selected aircraft with full pitch and roll
-- **Free flight** - fly through the scene with WASD controls
-
-### Telemetry Panel
-- Data grid showing all available telemetry: position, altitude, heading, speed, G-force, AOA, turn rate, vertical speed, Mach, and more
-- Derived values where direct telemetry is unavailable - G-force from turn rate and airspeed, TAS from IAS and altitude, etc.
-- All information panels support docking / undocking from main window
+### Interface
+- Every panel can be **docked** to the left, right, top or bottom of the 3D view, or undocked into a floating window
+- Four camera modes: global orbit, tracking, cockpit and free flight
+- **Right-click an object** to edit its identity or choose a different 3D model
+- A Preferences window for everything else; the window, its panels and all settings are remembered between runs
 
 ---
 
-## Getting Started
+## 3D models
 
-*More information will become available along with the initial source release.*
+OpenACMI ships with simple generic shapes only. To see real aircraft:
 
-<!--
-### Prerequisites
+1. Get a set of models named the way Tacview names them, for example `FixedWing.F-16.glb` or `Vehicle.Tank.T-72.obj`. The [Tacview community model library](https://github.com/Vyrtuoz/Tacview) is the usual source; it is GPL v3 licensed and is **not** part of OpenACMI - see that repository for its terms.
+2. Put them in a folder, or in a `meshes` folder inside one.
+3. Choose that folder with **File › 3D Model Folder…**
 
-- [Godot 4.x](https://godotengine.org/download) (4.6 recommended)
+The Telemetry panel shows which model file each object is drawn with, and the 3D view tells you when no models of your own were found. You can also right-click any object and pick a model for it by hand.
 
-### Run from source
-
-```bash
-git clone https://github.com/your-org/openacmi.git
-cd openacmi
-# Open the project in Godot 4 and press F5
-```
-
-### Load a recording
-
-1. Launch OpenACMI
-2. Go to **File → Open** and select any `.acmi` or `.acmi.zip` file
-3. Use the timeline slider at the bottom to scrub through the recording
-4. Press **Space** to pause/resume
-
-### Connect to a live feed
-
-1. Open the **Connection** panel
-2. Enter the hostname and port of your telemetry server (default: `localhost:42674`)
-3. Click **Connect**
-
-Compatible sources include DCS2ACMI, TacviewSDK, and any server implementing the Tacview real-time telemetry protocol.
--->
 ---
 
-## Supported Simulators
+## Controls
 
-OpenACMI aims to support any simulator with a Tacview exporter that works out of the box or with :
-
-| Simulator | Export Method |
+| Input | Action |
 |---|---|
-| DCS World | DCS2ACMI |
+| Left / right drag | Orbit (global, tracking), look around (cockpit, free flight) |
+| Wheel, `+` / `-` | Zoom; in free flight, change speed |
+| `W A S D`, arrows | Orbit / fly; `Q` `E` down / up in free flight; `Shift` = faster |
+| Click an object | Select as primary (`Ctrl` / `Shift` + click: secondary) |
+| Right-click an object | Menu: edit object, select as primary or secondary |
+| Click the globe | Show the coordinates under the pointer |
+| Click or drag in a graph | Move playback to that moment |
+| Middle drag | Scrub through time |
+| `Shift` + right drag | Move the sun |
+| `Space` | Play / pause |
+| `,` `.` | Previous / next sample of the primary object |
+| `Home` `End` | Start / end of the recording |
+| `C` | Cycle camera mode |
+| `Ctrl+O`, `Ctrl+S` | Open, save as |
+
+---
+
+## Supported simulators
+
+Anything that writes ACMI 2.x files or speaks the real-time telemetry protocol:
+
+| Simulator | Export method |
+|---|---|
+| DCS World | Tacview exporter (DCS2ACMI) |
 | Falcon BMS | Built-in ACMI export |
 | IL-2 Sturmovik | Built-in ACMI export |
 | X-Plane | Tacview plugin |
 | MSFS / FSX | Tacview plugin |
 | Any source | Any server speaking the real-time telemetry protocol |
 
+If a recording from your simulator does not load or looks wrong, please open an issue and attach it.
+
 ---
 
-<!--## Architecture
+## Building from source
 
-OpenACMI is designed to be layered and extensible. The core data pipeline has no engine dependency - the parser and world model are plain GDScript classes that could be ported to any language:
+You need a recent stable [Rust toolchain](https://rustup.rs/).
 
+```bash
+git clone https://github.com/Spearhead2/OpenACMI.git
+cd OpenACMI
+cargo run --release -p openacmi -- samples/demo.acmi
 ```
-┌─────────────────────────────────────────────────┐
-│                  Data Sources                   │
-│   .acmi file  │  .acmi.zip  │  TCP live feed    │
-└───────────────────────┬─────────────────────────┘
-                        │
-               ┌────────▼────────┐
-               │   ACMIParser    │  Parses ACMI 2.x line by line
-               └────────┬────────┘
-                        │
-               ┌────────▼────────┐
-               │  WorldManager   │  Typed object registries,
-               │                 │  event log, session metadata
-               │  cBaseObject    │
-               │  cAircraftObject│
-               │  cWeaponObject  │
-               │  cGroundObject  │
-               │  ...            │
-               └────────┬────────┘
-                        │
-          ┌─────────────▼──────────────┐
-          │     Display3D              │  Godot 3D scene
-          │                            │  Globe, objects, trails,
-          │     Dynamic MeshLibrary    │  camera, timeline UI
-          └────────────────────────────┘
-```-->
 
-### Key files
+```bash
+cargo test --workspace
+```
 
-| File | Purpose |
+The project is a workspace of five crates, each with one job:
+
+| Crate | Responsibility |
 |---|---|
-| `ACMI_Parser.gd` | Full ACMI 2.x parser |
-| `WorldManager.gd` | Session state, typed object dictionaries |
-| `cBaseObject.gd` | Base class for all tracked objects |
-| `cAircraftObject.gd` | Aircraft with full aerodynamic properties |
-| `cWeaponObject.gd` `cGroundObject.gd` etc. | Typed subclasses |
-| `cEventObject.gd` | Event log entries |
-| `Display3D.gd` | Main 3D viewport - globe, objects, camera |
-| `MeshLibrary.gd` | Resolves and caches 3D models by name and type |
-| `ClientBase.gd` | Real-time telemetry TCP client |
-| `FileManager.gd` | Basic file operations (loading/saving, recent files) |
-| `Config.gd` | All user preferences with change signals |
-| `ObjectTag.gd` | ACMI type tag constants |
+| `acmi-core` | Data model, ACMI parser and writer, geodesy, derived flight data. No I/O. |
+| `acmi-io` | Loading and saving files, the real-time telemetry client. |
+| `acmi-terrain` | Streams, caches and decodes terrain and imagery tiles. No GPU code. |
+| `acmi-render` | The wgpu renderer: globe, terrain, atmosphere, models, trails. Knows nothing about recordings or the UI. |
+| `openacmi` | The application: UI, camera, timeline, settings. |
+
+[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) explains how the pieces fit together and how to add a quantity, a panel, a colour scheme or a setting.
 
 ---
 
-## General Roadmap
+## Roadmap
 
-- [ ] Windows, Linux, macOS release builds
-- [ ] Exports of object telemetry to .csv
-- [ ] Support for flat world non-real terrains for sims like Nuclear Option
-- [ ] Charting of object telemetry
-- [ ] Performance Improvements
-- [ ] Save live data to file
+- [x] Windows release build
+- [x] Export of object telemetry to .csv
+- [x] Charting of object telemetry
+- [x] Save live data to file
+- [x] Event log
+- [x] Tile map support - streamed satellite imagery and terrain from any XYZ tile provider
+- [x] File editing - object identity and 3D model
+- [ ] Linux and macOS release builds
+- [ ] Support for flat-world, non-real terrains for sims like Nuclear Option
 - [ ] Enhanced 2D plan view
 - [ ] Display of radar locks
-- [ ] Events Log and visualization
 - [ ] Weapons employment log and shot analysis
 - [ ] Localization
-- [ ] Tile map support - stream satellite or terrain imagery from NASA, Maptiler, Stadia, or any XYZ tile provider
 - [ ] Use local game terrain heightmaps for enhanced 3D visualization
 - [ ] Multi-session overlay (compare two recordings)
 - [ ] Plugin API for custom data sources
 - [ ] Database XML support (Tacview-compatible object definitions)
 - [ ] Screenshot / video export
-- [ ] Connection to ADS-B Data
+- [ ] Connection to ADS-B data
 - [ ] Multiplayer debrief mode (shared session over LAN)
-- [ ] Multiplayer live controller mode (Custom display for live feeds)
-- [ ] Implementation for *.oacm (OpenACMI File Pack) for more functionality
-- [ ] File editing (Adding objects, changing parameters, etc.)
-- [ ] Attachmet of cockpit display recordings to the recording (Part of *.oacm file)
+- [ ] Multiplayer live controller mode (custom display for live feeds)
+- [ ] `*.oacm` (OpenACMI File Pack) for more functionality
+- [ ] More file editing (adding objects, changing parameters)
+- [ ] Attachment of cockpit display recordings to the recording (part of the `*.oacm` file)
 
 Have another idea? Post it in an issue!
 
@@ -196,46 +184,11 @@ Have another idea? Post it in an issue!
 
 ## Contributing
 
-Contributions of all kinds are welcome - code, bug reports, 3D models, simulator-specific testing, documentation.  
-*More information will become available along with the initial source release.*
+Contributions of all kinds are welcome - code, bug reports, simulator-specific testing, documentation.
 
-<!--
-**Good first issues** are tagged in the issue tracker. The parser and world model are especially approachable - they're self-contained and have no engine dependency beyond GDScript syntax.
+- Bugs and ideas go in the [issue tracker](https://github.com/Spearhead2/OpenACMI/issues). A recording that reproduces the problem helps more than anything else.
+- For code, start with [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). Please run `cargo test --workspace` and `cargo clippy --workspace --all-targets` before opening a pull request.
 
-### Development setup
-
-1. Install [Godot 4.x](https://godotengine.org/download)
-2. Fork and clone the repository
-3. Open `project.godot` in the Godot editor
-4. Grab a sample ACMI file from the [Tacview website](https://www.tacview.net/) or generate one from your simulator
-5. Press F5 to run
-
-### Code style
-
-- GDScript with full static typing throughout
-- Class names prefixed with `c` for data classes (`cAircraftObject`, `cWorldManager`)
-- Autoloads named `Cfg`, `FileMgr`, `MeshLib`
-- Signals for cross-node communication - avoid direct node references where possible
-
-### 3D Models
-
-OpenACMI does not ship 3D models directly. To enable model rendering:
-
-1. Clone the [Tacview community model library](https://github.com/Vyrtuoz/Tacview)
-   (GPL v3 licensed — see that repo for terms)
-2. Copy the contents of `3D Models/Data/Meshes/` into `Data/Meshes/`
-   in your OpenACMI installation
-
-Alternatively, You're welcome to add your own models as `.obj` files into `Data/Meshes/`. The mesh library will try to find the best suit for each model and world entity.
-
-Without models, objects are displayed as placeholder shapes.
-The model resolver will automatically pick up any `.obj` files
-you place in that folder.
-
-### Adding a simulator
-
-If your simulator isn't listed above and you want to add support, the right place to start is `ACMI_Parser.gd`. File an issue with a sample `.acmi` recording and we can work out what's needed.
--->
 ---
 
 ## License
@@ -246,14 +199,16 @@ You are free to use, modify, and distribute OpenACMI for any purpose, including 
 
 ---
 
-## Acknowledgements
+## Acknowledgements and data sources
 
-- [Tacview](https://www.tacview.net/) by Frantz 'Vyrtuoz' Raia - for the inspiration and ACMI format specification that makes this possible. <!-- Also - the 3D model library -->
-- The Falcon BMS, DCS World, and IL-2 communities - for years of ACMI tooling, exporters, and feedback
-- [Natural Earth](https://www.naturalearthdata.com/) - country border data
-- [NASA Earthdata / GIBS](https://earthdata.nasa.gov/) - satellite imagery
+- [Tacview](https://www.tacview.net/) by Frantz 'Vyrtuoz' Raia - for the inspiration and the ACMI format specification that makes this possible.
+- The Falcon BMS, DCS World, and IL-2 communities - for years of ACMI tooling, exporters, and feedback.
+- [Natural Earth](https://www.naturalearthdata.com/) - country border data.
+- Terrain elevation: [Terrain Tiles](https://registry.opendata.aws/terrain-tiles/) hosted on AWS, originally by Mapzen, built from SRTM, GMTED, ETOPO1 and other open sources.
+- Satellite imagery: [Sentinel-2 cloudless](https://s2maps.eu) by [EOX IT Services GmbH](https://eox.at) (contains modified Copernicus Sentinel data 2016 & 2017), CC BY 4.0. Imagery is streamed from EOX's servers; if you use it heavily, please point OpenACMI at your own tile server in Preferences.
+- The Rust graphics community, in particular [wgpu](https://wgpu.rs/) and [egui](https://www.egui.rs/).
 
 ---
 
 *OpenACMI is an independent open-source project and is not affiliated with Tacview or RaiaSoftware.*  
-*© Amir "Spearhead" Levy & Contributors*  
+*© Amir "Spearhead" Levy & Contributors*

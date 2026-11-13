@@ -1,0 +1,28 @@
+[package]
+name = "openacmi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description.workspace = true
+
+build = "build.rs"
+
+[build-dependencies]
+winresource = "0.1"
+
+[dependencies]
+acmi-core.workspace = true
+acmi-io.workspace = true
+acmi-render.workspace = true
+directories.workspace = true
+eframe.workspace = true
+egui.workspace = true
+env_logger.workspace = true
+glam.workspace = true
+image.workspace = true
+log.workspace = true
+rfd.workspace = true
+rustc-hash.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true

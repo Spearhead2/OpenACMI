@@ -1,0 +1,13 @@
+[package]
+name = "acmi-terrain"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Streams, caches and decodes elevation tiles for the OpenACMI globe. No GPU code."
+
+[dependencies]
+acmi-core.workspace = true
+image.workspace = true
+log.workspace = true
+thiserror.workspace = true
+ureq.workspace = true
