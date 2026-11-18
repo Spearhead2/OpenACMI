@@ -58,7 +58,9 @@ pub const BASINS: &[Basin] = &[
     basin("Chott Melrhir and Chott el Gharsa", 5.50, 33.60, 8.40, 34.60, None),
     // Asia.
     basin("Karagiye Depression", 51.55, 43.30, 52.00, 43.80, None),
-    basin("Caspian Sea", 46.00, 36.40, 55.00, 47.30, Some(-27.0)),
+    // The sea and the whole Caspian Depression around it: the lowland runs
+    // far north and west of the shore, all of it below sea level.
+    basin("Caspian Sea and Depression", 43.00, 36.30, 56.00, 51.00, Some(-27.0)),
     basin("Sarygamysh and Akchakaya", 56.50, 40.30, 58.50, 42.30, None),
     basin("Turpan Depression", 88.50, 42.30, 90.50, 43.20, None),
     // Elsewhere.
@@ -84,6 +86,9 @@ pub fn basin_at(latitude: f64, longitude: f64) -> Option<&'static Basin> {
     BASINS.iter().find(|basin| basin.contains(latitude, longitude))
 }
 
+/// Depth every basin lake is drawn with, metres: a mid blue.
+pub const LAKE_DEPTH_M: f32 = 150.0;
+
 /// Top surface at one sample.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Surface {
@@ -102,7 +107,11 @@ impl Surface {
             Some(_) => return Surface::Land(height),
         };
         if height <= level {
-            Surface::Water { level, depth: level - height }
+            // The DEM has the sea floor under the oceans, but under lakes it
+            // has the bed in some tiles and the flat water surface in others,
+            // which would colour a lake in squares. Lakes get one depth.
+            let depth = if basin.is_some() { LAKE_DEPTH_M } else { level - height };
+            Surface::Water { level, depth }
         } else {
             Surface::Land(height)
         }
@@ -197,6 +206,24 @@ mod tests {
     }
 
     #[test]
+    fn the_caspian_depression_is_land_not_sea() {
+        // Astrakhan, Atyrau and the steppe towards the Kuma: 20 to 27 m below
+        // sea level, well away from the shore, and dry.
+        for (latitude, longitude) in [(46.35, 48.04), (47.10, 51.90), (49.50, 48.00), (45.00, 44.50)] {
+            let basin = basin_at(latitude, longitude);
+            assert_eq!(basin.map(|basin| basin.name), Some("Caspian Sea and Depression"), "{latitude} {longitude}");
+            assert_eq!(Surface::classify(-22.0, basin), Surface::Land(-22.0));
+        }
+        // The sea itself, however deep the DEM says it is there.
+        let sea = basin_at(41.0, 51.0);
+        assert!(Surface::classify(-28.0, sea).is_water() && Surface::classify(-900.0, sea).is_water());
+        assert_eq!(Surface::classify(-28.0, sea), Surface::classify(-900.0, sea));
+        // The Black Sea and the Sea of Azov are ocean, outside the box.
+        assert_eq!(basin_at(46.0, 37.0), None);
+        assert_eq!(basin_at(43.0, 39.0), None);
+    }
+
+    #[test]
     fn basins_keep_their_ground_below_sea_level() {
         // Jericho, about 250 m below sea level.
         let jericho = basin_at(31.86, 35.46);
@@ -206,7 +233,10 @@ mod tests {
         // The Dead Sea itself is water at its own level; its shore is land.
         let dead_sea = basin_at(31.5, 35.48);
         assert_eq!(dead_sea.map(|basin| basin.name), Some("Dead Sea"));
-        assert_eq!(Surface::classify(-416.0, dead_sea), Surface::Water { level: -412.0, depth: 4.0 });
+        // Whatever the DEM says lies under it, a lake has one depth: the data
+        // holds the bed in some tiles and the water surface in others.
+        assert_eq!(Surface::classify(-416.0, dead_sea), Surface::Water { level: -412.0, depth: LAKE_DEPTH_M });
+        assert_eq!(Surface::classify(-700.0, dead_sea), Surface::Water { level: -412.0, depth: LAKE_DEPTH_M });
         assert_eq!(Surface::classify(-380.0, dead_sea), Surface::Land(-380.0));
 
         assert!(Surface::classify(-80.0, basin_at(36.23, -116.83)) == Surface::Land(-80.0), "Badwater, Death Valley");
@@ -235,7 +265,7 @@ mod tests {
         let row = (0..size as isize).find(|&row| key.latitude((row as f64 + 0.5) / size as f64) < 31.6).unwrap();
 
         // In the lake: water at the lake's level.
-        assert_eq!(tile.surface(column(35.5), row), Surface::Water { level: -412.0, depth: 4.0 });
+        assert_eq!(tile.surface(column(35.5), row), Surface::Water { level: -412.0, depth: LAKE_DEPTH_M });
         // West of the basin the same height would be sea floor.
         assert_eq!(tile.surface(column(35.2), row), Surface::Water { level: 0.0, depth: 416.0 });
         // North of the lake the tile reaches the dry valley floor, which keeps its height.
