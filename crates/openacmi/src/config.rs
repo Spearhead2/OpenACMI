@@ -384,8 +384,9 @@ impl Default for Borders {
 #[serde(default)]
 pub struct Objects {
     /// Models never shrink below this on-screen radius, so objects stay
-    /// visible from any distance.
+    /// visible from any distance (see [`Scaling`] for the limits on that).
     pub min_pixel_radius: f32,
+    pub scaling: Scaling,
     pub show_labels: bool,
     /// Labels are drawn for at most this many objects, nearest first.
     pub max_labels: usize,
@@ -398,11 +399,69 @@ impl Default for Objects {
     fn default() -> Self {
         Self {
             min_pixel_radius: 14.0,
+            scaling: Scaling::default(),
             show_labels: true,
             max_labels: 250,
             relation_line_color: Rgba([255, 204, 51, 217]),
             visible_categories: [true; acmi_core::Category::COUNT],
         }
+    }
+}
+
+/// How the size of models follows the distance they are seen from.
+///
+/// Up close a model is drawn at its real size times [`Scaling::model_scale`].
+/// Further away it would shrink to nothing, so it is enlarged to stay
+/// [`Objects::min_pixel_radius`] across on screen, within the limits here.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Scaling {
+    /// Enlarge distant models. Off draws everything at its real size.
+    pub enabled: bool,
+    /// Size of every model relative to real life, at any distance.
+    pub model_scale: f32,
+    /// Models are never enlarged by more than this factor, so beyond some
+    /// distance they do shrink and vanish. 0 means no limit.
+    pub max_enlargement: f32,
+    /// Distance in metres within which models are never enlarged. The
+    /// enlargement fades in between this distance and twice it. 0 enlarges
+    /// from any distance.
+    pub start_distance_m: f32,
+    /// Size on screen of weapons, and of static objects and navaids, as a
+    /// fraction of [`Objects::min_pixel_radius`].
+    pub weapon_size: f32,
+    pub static_size: f32,
+}
+
+impl Default for Scaling {
+    fn default() -> Self {
+        Self { enabled: true, model_scale: 1.0, max_enlargement: 0.0, start_distance_m: 0.0, weapon_size: 0.7, static_size: 0.4 }
+    }
+}
+
+impl Scaling {
+    /// Factor to draw a model with.
+    ///
+    /// `radius_m` is the model's real bounding radius, `min_radius_px` the
+    /// smallest radius it should have on screen, `distance_m` how far it is
+    /// from the eye and `meters_per_pixel` the size of a pixel there.
+    pub fn factor(&self, radius_m: f64, min_radius_px: f64, distance_m: f64, meters_per_pixel: f64) -> f64 {
+        let base = (self.model_scale as f64).max(0.01);
+        if !self.enabled {
+            return base;
+        }
+        // The enlargement fades in over the start distance, so a model does
+        // not jump in size as the camera crosses it.
+        let start = self.start_distance_m as f64;
+        let fade = if start > 0.0 {
+            let x = ((distance_m - start) / start).clamp(0.0, 1.0);
+            x * x * (3.0 - 2.0 * x)
+        } else {
+            1.0
+        };
+        let wanted = min_radius_px * fade * meters_per_pixel / (radius_m.max(0.01) * base);
+        let limit = if self.max_enlargement > 0.0 { self.max_enlargement.max(1.0) as f64 } else { f64::INFINITY };
+        base * wanted.clamp(1.0, limit)
     }
 }
 
@@ -802,6 +861,39 @@ mod tests {
 
         settings.panels.reset_layout();
         assert_eq!(settings.panels.docked(Dock::Right), []);
+    }
+
+    #[test]
+    fn distant_models_are_enlarged_within_the_limits_set() {
+        // A model 10 m in radius that should stay 14 px across; a pixel
+        // covers 1 mm per metre of distance.
+        let scale = |scaling: &Scaling, distance: f64| scaling.factor(10.0, 14.0, distance, distance * 0.001);
+        let default = Scaling::default();
+        // Close up it is bigger than 14 px anyway: real size.
+        assert_eq!(scale(&default, 100.0), 1.0);
+        // At 10 km a pixel is 10 m: 14 times larger keeps it 14 px.
+        assert!((scale(&default, 10_000.0) - 14.0).abs() < 1e-9);
+        assert!((scale(&default, 1_000_000.0) - 1400.0).abs() < 1e-6);
+
+        // A cap on the enlargement: beyond it the model shrinks with distance.
+        let capped = Scaling { max_enlargement: 50.0, ..Scaling::default() };
+        assert!((scale(&capped, 10_000.0) - 14.0).abs() < 1e-9);
+        assert_eq!(scale(&capped, 1_000_000.0), 50.0);
+
+        // Real size until 20 km, easing in up to 40 km.
+        let late = Scaling { start_distance_m: 20_000.0, ..Scaling::default() };
+        assert_eq!(scale(&late, 10_000.0), 1.0);
+        let (halfway, full) = (scale(&late, 30_000.0), scale(&late, 40_000.0));
+        assert!(halfway > 1.0 && halfway < 42.0 && (full - 56.0).abs() < 1e-9, "{halfway} {full}");
+
+        // An overall scale applies everywhere and does not add to the enlargement.
+        let doubled = Scaling { model_scale: 2.0, ..Scaling::default() };
+        assert_eq!(scale(&doubled, 100.0), 2.0);
+        assert!((scale(&doubled, 10_000.0) - 14.0).abs() < 1e-9);
+
+        // Switched off: real size at any distance.
+        let off = Scaling { enabled: false, ..Scaling::default() };
+        assert_eq!(scale(&off, 1_000_000.0), 1.0);
     }
 
     #[test]

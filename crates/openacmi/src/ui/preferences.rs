@@ -32,6 +32,7 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
                 general(ui, settings, &user_data, user_models, &mut pick_model_folder);
                 camera(ui, settings);
                 objects(ui, settings);
+                scaling(ui, settings);
                 trails(ui, settings);
                 lighting(ui, settings);
                 atmosphere(ui, settings);
@@ -156,9 +157,6 @@ fn objects(ui: &mut egui::Ui, settings: &mut Settings) {
     let objects = &mut settings.objects;
     let mut do_reset = false;
     section(ui, "Objects and labels", false, || do_reset = true, |ui| {
-        row(ui, "Smallest size on screen", "Models never shrink below this radius, so objects stay visible from any distance", |ui| {
-            ui.add(egui::Slider::new(&mut objects.min_pixel_radius, 2.0..=40.0).suffix(" px"));
-        });
         row(ui, "Labels", "Name tags next to objects in the 3D view", |ui| {
             ui.checkbox(&mut objects.show_labels, "");
         });
@@ -171,7 +169,56 @@ fn objects(ui: &mut egui::Ui, settings: &mut Settings) {
     });
     if do_reset {
         // Which kinds of object are shown belongs to the View panel.
+        // Sizes belong to the Object size section.
+        let keep = (objects.min_pixel_radius, objects.scaling.clone());
         *objects = crate::config::Objects { visible_categories: objects.visible_categories, ..Default::default() };
+        (objects.min_pixel_radius, objects.scaling) = keep;
+    }
+}
+
+fn scaling(ui: &mut egui::Ui, settings: &mut Settings) {
+    let objects = &mut settings.objects;
+    let mut do_reset = false;
+    section(ui, "Object size", false, || do_reset = true, |ui| {
+        let scaling = &mut objects.scaling;
+        row(ui, "Enlarge distant objects", "Keep models visible from far away by drawing them larger than life; off draws everything at real size", |ui| {
+            ui.checkbox(&mut scaling.enabled, "");
+        });
+        let enabled = scaling.enabled;
+        row(ui, "Smallest size on screen", "Radius an enlarged model keeps on screen", |ui| {
+            ui.add_enabled(enabled, egui::Slider::new(&mut objects.min_pixel_radius, 2.0..=40.0).suffix(" px"));
+        });
+        row(ui, "Largest enlargement", "Models are never drawn more than this many times life size, so from far enough they shrink and vanish", |ui| {
+            let mut limited = scaling.max_enlargement > 0.0;
+            if ui.add_enabled(enabled, egui::Checkbox::new(&mut limited, "")).changed() {
+                scaling.max_enlargement = if limited { 500.0 } else { 0.0 };
+            }
+            if limited {
+                ui.add_enabled(enabled, egui::Slider::new(&mut scaling.max_enlargement, 1.0..=100_000.0).logarithmic(true).suffix("×"));
+            } else {
+                ui.weak("no limit");
+            }
+        });
+        row(ui, "Real size within", "Closer than this, models are not enlarged; the enlargement eases in up to twice this distance. 0 enlarges at any distance.", |ui| {
+            let mut km = scaling.start_distance_m / 1000.0;
+            if ui.add_enabled(enabled, egui::Slider::new(&mut km, 0.0..=200.0).suffix(" km").fixed_decimals(1)).changed() {
+                scaling.start_distance_m = km * 1000.0;
+            }
+        });
+        row(ui, "Weapons", "Size on screen of enlarged weapons, relative to other objects", |ui| {
+            ui.add_enabled(enabled, egui::Slider::new(&mut scaling.weapon_size, 0.1..=2.0).suffix("×"));
+        });
+        row(ui, "Static objects", "Size on screen of enlarged buildings, navaids and other fixed objects, relative to other objects", |ui| {
+            ui.add_enabled(enabled, egui::Slider::new(&mut scaling.static_size, 0.1..=2.0).suffix("×"));
+        });
+        row(ui, "Model scale", "Size of every model relative to real life, at any distance", |ui| {
+            ui.add(egui::Slider::new(&mut scaling.model_scale, 0.25..=20.0).logarithmic(true).suffix("×"));
+        });
+    });
+    if do_reset {
+        let defaults = crate::config::Objects::default();
+        objects.min_pixel_radius = defaults.min_pixel_radius;
+        objects.scaling = defaults.scaling;
     }
 }
 

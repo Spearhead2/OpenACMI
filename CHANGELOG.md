@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+- Object size settings in Preferences: switch the enlargement of distant objects on or off, limit it, keep objects at real size within a chosen distance, set the size of weapons and static objects, and scale all models
+- Generic shapes for helicopters, rotors, torpedoes, infantry, artillery, parachutists, drop tanks and rocket pods
+
+### Fixed
+- Land below sea level around the Caspian Sea was drawn as ocean, and the sea itself was coloured in squares
+
+---
+
 ## [v0.1.0] - 2026-11-12
 
 Initial source release. OpenACMI is now written in Rust, on wgpu and egui.
