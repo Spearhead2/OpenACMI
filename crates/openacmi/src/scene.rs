@@ -42,7 +42,7 @@ struct TrailKey {
     revision: u64,
     time: u64,
     visible: [bool; Category::COUNT],
-    settings: (u32, u32, usize, bool, u32, bool, u32, u32),
+    settings: (u32, u32, usize, bool, u32, bool, u32, u32, u32),
 }
 
 #[derive(Default)]
@@ -80,6 +80,7 @@ impl Scene {
                 trails.ribbons,
                 trails.ribbon_width.to_bits(),
                 trails.ribbon_opacity.to_bits(),
+                inputs.settings.objects.scaling.model_scale.to_bits(),
             ),
         };
         if self.trail_key.as_ref() != Some(&key) {
@@ -139,15 +140,16 @@ impl Scene {
                 continue;
             }
             // Enlarge distant models so they never shrink below a few pixels.
+            let scaling = &objects.scaling;
             let min_radius_px = objects.min_pixel_radius
                 * match object.category() {
-                    Category::Static | Category::Navaid => 0.4,
-                    Category::Weapon => 0.7,
+                    Category::Static | Category::Navaid => scaling.static_size,
+                    Category::Weapon => scaling.weapon_size,
                     _ => 1.0,
                 };
             let distance = position.distance(inputs.camera.eye);
             let meters_per_pixel = inputs.camera.meters_per_pixel(distance, inputs.viewport_height);
-            let scale = (min_radius_px as f64 * meters_per_pixel / renderer.mesh_radius(mesh).max(0.01) as f64).max(1.0);
+            let scale = scaling.factor(renderer.mesh_radius(mesh) as f64, min_radius_px as f64, distance, meters_per_pixel);
 
             self.instances.push(ModelInstance {
                 mesh,
@@ -176,7 +178,8 @@ impl Scene {
                 let ribbon = (trails.ribbons && rolls).then(|| {
                     let mesh = self.object_meshes.get(handle.index()).copied().flatten();
                     let size = mesh.map_or(RIBBON_DEFAULT_SIZE_M, |mesh| renderer.mesh_radius(mesh));
-                    size * RIBBON_HALF_WIDTH_PER_SIZE * trails.ribbon_width.max(0.0)
+                    // As wide as the model is drawn up close.
+                    size * RIBBON_HALF_WIDTH_PER_SIZE * trails.ribbon_width.max(0.0) * inputs.settings.objects.scaling.model_scale.max(0.01)
                 });
                 let colors = inputs.palette.for_object(object);
                 append_trail(&mut self.trails, &mut self.ribbons, object, colors, inputs.time, trails, ribbon);
