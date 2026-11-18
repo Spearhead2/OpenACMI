@@ -11,6 +11,7 @@ mod app;
 mod camera_controller;
 mod config;
 mod export;
+mod file_association;
 mod palette;
 mod quantity;
 mod scene;
@@ -53,8 +54,20 @@ impl Args {
                 "--edit" => args.edit = raw.next().and_then(|v| u64::from_str_radix(&v, 16).ok()),
                 "--secondary" => args.secondary = raw.next().and_then(|v| u64::from_str_radix(&v, 16).ok()),
                 "--track" => args.track = raw.next().and_then(|v| u64::from_str_radix(&v, 16).ok()),
+                // For installers and scripts: change the association and exit.
+                "--associate" | "--remove-association" => {
+                    let result = if arg == "--associate" { file_association::register() } else { file_association::remove() };
+                    if let Err(err) = &result {
+                        eprintln!("cannot change the .acmi file association: {err}");
+                    }
+                    std::process::exit(result.is_err() as i32);
+                }
                 "-h" | "--help" => {
-                    println!("Usage: openacmi [FILE.acmi]\n\nOpens an ACMI 2.x recording (plain or zipped).");
+                    println!(
+                        "Usage: openacmi [FILE.acmi]\n\nOpens an ACMI 2.x recording (plain or zipped).\n\n\
+                         Options:\n  --associate           open .acmi files with this program (current user)\n  \
+                         --remove-association  undo that"
+                    );
                     std::process::exit(0);
                 }
                 _ => args.file = Some(PathBuf::from(arg)),
