@@ -52,6 +52,10 @@ pub struct Parser {
     version_ok: bool,
     /// Time of the current frame.
     time: f64,
+    /// A `#time` line has been read.
+    seen_frame: bool,
+    /// Objects or events were read before the first `#time` line.
+    data_before_first_frame: bool,
     /// Accumulates the pieces of a `\`-continued line.
     pending: String,
     stats: ParseStats,
@@ -166,9 +170,22 @@ impl Parser {
             return Ok(());
         }
 
+        // Anything but a time marker or a global property is data.
+        if first != b'#' && !self.seen_frame && !line.starts_with("0,") {
+            self.data_before_first_frame = true;
+        }
         match first {
             b'#' => match line[1..].trim().parse::<f64>() {
                 Ok(t) if t.is_finite() => {
+                    // Some recorders (Falcon BMS) list the starting state
+                    // of every object before the first time marker, and then
+                    // count time from midnight rather than from zero. That
+                    // state belongs to the first frame, not to time 0: left
+                    // there, the recording would open with hours of nothing.
+                    let first = !std::mem::replace(&mut self.seen_frame, true);
+                    if first && self.data_before_first_frame && t != 0.0 && recording.time_range == Some((0.0, 0.0)) {
+                        recording.shift_times(t);
+                    }
                     self.time = t;
                     self.stats.frames += 1;
                     // An empty frame still marks the passage of time.
@@ -378,6 +395,52 @@ mod tests {
         let text = format!("{HEADER}{body}");
         Parser::new().feed_text(&mut recording, &text, |_| {}).unwrap();
         recording
+    }
+
+    #[test]
+    fn state_listed_before_the_first_frame_belongs_to_it() {
+        // Falcon BMS: every object first, then time counted from midnight.
+        let recording = parse(
+            "0,ReferenceTime=2026-02-22T00:00:00Z
+             a1,T=34.6|31.2|217,Type=Air+FixedWing,Name=F-16I,Pilot=Viper,IAS=10
+             a2,T=34.7|31.7|42,Type=Ground+Static,Name=Warehouse
+             0,Event=Message|a1|Ready
+             #34092.3
+a1,T=34.6001|31.2|217,IAS=12
+             #34095
+a1,T=34.6002|31.2|218
+-a2
+",
+        );
+        // The recording starts at its first frame, not 9.5 hours earlier.
+        assert_eq!(recording.time_range(), Some((34092.3, 34095.0)));
+        let aircraft = recording.object(recording.find(0xa1).unwrap());
+        assert_eq!(aircraft.track.times(), [34092.3, 34095.0]);
+        assert_eq!(aircraft.track.len(), 2, "the starting state and the first frame are one sample");
+        assert!(!aircraft.is_active_at(100.0) && aircraft.is_active_at(34093.0));
+        assert_eq!(aircraft.text_at(known::PILOT, 34092.3), "Viper");
+        assert_eq!(aircraft.number_at(known::IAS, PropKind::Number(Unit::MetersPerSecond), 34092.3), Some(12.0));
+        let building = recording.object(recording.find(0xa2).unwrap());
+        assert_eq!((building.track.first_time(), building.removed_at()), (Some(34092.3), Some(34095.0)));
+        assert_eq!(recording.events()[0].time, 34092.3);
+
+        // The usual layouts are untouched: a marker first, or time from zero.
+        let marked = parse("#50
+a1,T=1|2|3
+#60
+a1,T=1.1|2|3
+");
+        assert_eq!(marked.time_range(), Some((50.0, 60.0)));
+        let zero = parse("a1,T=1|2|3
+#0
+a1,T=1.1|2|3
+#5
+a1,T=1.2|2|3
+");
+        assert_eq!(zero.time_range(), Some((0.0, 5.0)));
+        // No marker at all: everything is at time zero.
+        assert_eq!(parse("a1,T=1|2|3
+").time_range(), Some((0.0, 0.0)));
     }
 
     #[test]

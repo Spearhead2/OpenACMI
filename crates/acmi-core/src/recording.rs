@@ -151,6 +151,18 @@ impl Recording {
         self.meta.reference_time.map(|reference| reference + t)
     }
 
+    /// Moves everything recorded so far later by `delta` seconds.
+    pub(crate) fn shift_times(&mut self, delta: f64) {
+        for object in &mut self.objects {
+            object.shift_times(delta);
+        }
+        for event in &mut self.events {
+            event.time += delta;
+        }
+        self.time_range = self.time_range.map(|(start, end)| (start + delta, end + delta));
+        self.revision += 1;
+    }
+
     pub(crate) fn extend_time_range(&mut self, t: f64) {
         self.time_range = Some(match self.time_range {
             Some((start, end)) => (start.min(t), end.max(t)),

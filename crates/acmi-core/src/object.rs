@@ -610,6 +610,18 @@ impl Object {
         Some(pose)
     }
 
+    /// Moves the object's whole history later by `delta` seconds.
+    pub(crate) fn shift_times(&mut self, delta: f64) {
+        self.track.time.iter_mut().for_each(|time| *time += delta);
+        self.removed_at = self.removed_at.map(|time| time + delta);
+        for (_, series) in &mut self.nums {
+            series.times.iter_mut().for_each(|time| *time += delta);
+        }
+        for (_, series) in &mut self.texts {
+            series.points.iter_mut().for_each(|(time, _)| *time += delta);
+        }
+    }
+
     /// Makes `value` the property's value for the object's whole life,
     /// discarding its history; an empty value removes the property.
     /// Returns `true` if anything changed.
