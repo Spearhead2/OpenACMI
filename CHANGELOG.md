@@ -7,13 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [v0.1.1] - 2026-11-18
 
 ### Added
+- Windows file association: open `.acmi`, `.zip.acmi` and `.txt.acmi` recordings with OpenACMI by double-click, from Preferences or with `--associate` / `--remove-association`
 - Object size settings in Preferences: switch the enlargement of distant objects on or off, limit it, keep objects at real size within a chosen distance, set the size of weapons and static objects, and scale all models
 - Generic shapes for helicopters, rotors, torpedoes, infantry, artillery, parachutists, drop tanks and rocket pods
 
 ### Fixed
+- Falcon BMS recordings opened with hours of nothing before the action: the starting state BMS writes before its first time marker is now attached to the first frame
 - Land below sea level around the Caspian Sea was drawn as ocean, and the sea itself was coloured in squares
 
 ---
@@ -44,4 +46,5 @@ Initial source release. OpenACMI is now written in Rust, on wgpu and egui.
 
 ---
 
+[v0.1.1]: https://github.com/Spearhead2/OpenACMI/releases/tag/v0.1.1
 [v0.1.0]: https://github.com/Spearhead2/OpenACMI/releases/tag/v0.1.0

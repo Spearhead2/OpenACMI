@@ -23,9 +23,9 @@
 
 ## Download
 
-Get the latest Windows build from the [**Releases page**](https://github.com/Spearhead2/OpenACMI/releases/latest), unzip it anywhere and run `OpenACMI.exe`. Keep the `assets` folder next to the executable.
+Get the latest Windows build from the [**Releases page**](https://github.com/Spearhead2/OpenACMI/releases/latest), unzip it anywhere and run `OpenACMI.exe`. Keep the `assets` folder next to the executable. Prefer to build it yourself? See [Building from source](#building-from-source).
 
-Then **File › Open** an `.acmi` file (plain or zipped), or drop one onto the window. A small synthetic recording is included as `samples/demo.acmi`.
+Then **File › Open** an `.acmi` file (plain or zipped), or drop one onto the window. To open recordings by double-clicking them, turn on the file association under **File › Preferences…**; it covers `.acmi`, `.zip.acmi` and `.txt.acmi`. A small synthetic recording is included as `samples/demo.acmi`.
 
 You need a GPU with DirectX 12, Vulkan or Metal. Terrain and satellite imagery are streamed from the internet the first time you look at a place and kept on disk afterwards; everything else works offline.
 
@@ -125,13 +125,72 @@ If a recording from your simulator does not load or looks wrong, please open an 
 
 ## Building from source
 
-You need a recent stable [Rust toolchain](https://rustup.rs/).
+You do not need to be a programmer to build OpenACMI: it takes three installs and two commands.
+
+### 1. Install the tools
+
+| What | Where | Notes |
+|---|---|---|
+| **Git** | [git-scm.com](https://git-scm.com/downloads) | Only used to download the source. You can instead use **Code › Download ZIP** on the GitHub page and unzip it. |
+| **Rust** | [rustup.rs](https://rustup.rs/) | Run the installer and accept the defaults. This provides the `cargo` command. |
+| **C++ build tools** (Windows) | [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) | The Rust installer offers to install these for you. If you do it yourself, tick **Desktop development with C++**. |
+
+On Linux, instead of the Visual Studio tools you need a C compiler and the development packages for GTK 3, Wayland / X11 and xkbcommon. On Debian or Ubuntu that is roughly `sudo apt install build-essential pkg-config libgtk-3-dev libxkbcommon-dev libwayland-dev libx11-dev`. On macOS, `xcode-select --install`. Neither has been tried yet, so expect to adjust.
+
+Open a **new** terminal afterwards (on Windows: PowerShell or Command Prompt), so that it knows about the freshly installed tools.
+
+### 2. Download and build
 
 ```bash
 git clone https://github.com/Spearhead2/OpenACMI.git
-cd OpenACMI
-cargo run --release -p openacmi -- samples/demo.acmi
 ```
+
+```bash
+cd OpenACMI
+```
+
+```bash
+cargo build --release
+```
+
+The first build downloads and compiles everything OpenACMI depends on and takes a few minutes; later builds take seconds. When it finishes, the program is at `target/release/openacmi.exe` (`target/release/openacmi` on Linux and macOS).
+
+### 3. Run it
+
+```bash
+cargo run --release -- samples/demo.acmi
+```
+
+or start `target/release/openacmi.exe` directly; run from there, it finds the `assets` folder in the source tree by itself.
+
+### Making a copy you can move or share
+
+The executable needs only the `assets` folder next to it. To make a self-contained folder like the one in the releases:
+
+1. Create a new folder, for example `OpenACMI`.
+2. Copy `target/release/openacmi.exe` into it.
+3. Copy the whole `assets` folder into it, so that you have `OpenACMI/assets/...`.
+
+That folder can be zipped, moved or put on another PC. Settings are kept per user under `%APPDATA%\OpenACMI`, not in the folder.
+
+### Updating
+
+```bash
+git pull
+```
+
+```bash
+cargo build --release
+```
+
+### If something goes wrong
+
+- **`cargo` is not recognised:** open a new terminal after installing Rust, or sign out and in again.
+- **`link.exe` not found (Windows):** the C++ build tools are missing; install them as in step 1.
+- **A blank or black 3D view:** update your graphics driver. OpenACMI needs DirectX 12, Vulkan or Metal.
+- **Anything else:** open an [issue](https://github.com/Spearhead2/OpenACMI/issues) with the last lines the build printed.
+
+### For developers
 
 ```bash
 cargo test --workspace
@@ -154,6 +213,7 @@ The project is a workspace of five crates, each with one job:
 ## Roadmap
 
 - [x] Windows release build
+- [x] Open recordings by double-click (Windows file association)
 - [x] Export of object telemetry to .csv
 - [x] Charting of object telemetry
 - [x] Save live data to file
