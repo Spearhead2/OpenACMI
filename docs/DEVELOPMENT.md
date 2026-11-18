@@ -232,6 +232,6 @@ controller sessions).
 ## Assets
 
 `assets/borders.bin`, `assets/textures/world_map.png` and `assets/acmi_colors.json`
-come unchanged from the Godot project, as do the generic shapes in `assets/meshes`.
-Only shapes made for OpenACMI are in the repository; models from other libraries
-are the user's to install (see the README).
+come unchanged from the Godot project, as do the generic shapes in `assets/meshes`,
+which were made for OpenACMI. Models of specific aircraft and vehicles are the
+user's to install (see the README).

@@ -1,16 +1,10 @@
 /target
 /dist
 
-# Not ours to redistribute: recordings and models from other projects.
-# Keep them locally if you have them; they are picked up when present.
+# Recordings from other projects are not ours to redistribute; only the
+# synthetic demo is part of the repository.
 /samples/*
 !/samples/demo.acmi
-/assets/meshes/Other.*.obj
-/assets/meshes/Core.Artillery.obj
-/assets/meshes/Core.Infantry.obj
-/assets/meshes/Core.Rotor.*.obj
-/assets/meshes/Core.Rotorcraft.obj
-/assets/meshes/Core.Torpedo.obj
 
 # The logo lives at the repository root.
 /assets/logo.png
