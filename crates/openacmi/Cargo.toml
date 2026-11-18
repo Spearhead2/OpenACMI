@@ -26,3 +26,8 @@ rustc-hash.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 toml.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+# File associations: the registry, and telling Explorer about the change.
+winreg = "0.55"
+windows-sys = { version = "0.61", features = ["Win32_UI_Shell"] }

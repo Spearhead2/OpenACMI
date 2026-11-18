@@ -13,6 +13,8 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
     }
     let mut open = true;
     let mut pick_model_folder = false;
+    // `true` to associate, `false` to remove the association.
+    let mut associate: Option<bool> = None;
     egui::Window::new("Preferences")
         .open(&mut open)
         .collapsible(false)
@@ -28,8 +30,12 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
             egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
                 let user_data = app.user_data.display().to_string();
                 let user_models = app.user_models;
+                let association = app.ui.association.get_or_insert_with(crate::file_association::status).clone();
                 let settings = &mut app.settings;
                 general(ui, settings, &user_data, user_models, &mut pick_model_folder);
+                if let Some(change) = file_association(ui, &association) {
+                    associate = Some(change);
+                }
                 camera(ui, settings);
                 objects(ui, settings);
                 scaling(ui, settings);
@@ -46,10 +52,75 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
     if pick_model_folder {
         app.model_folder_dialog();
     }
+    if let Some(register) = associate {
+        let result = if register { crate::file_association::register() } else { crate::file_association::remove() };
+        if let Err(err) = result {
+            app.ui.error = Some(format!("Cannot change the .acmi file association: {err}"));
+        }
+        // Look again rather than assume it worked.
+        app.ui.association = None;
+    }
 }
 
 /// Set by `--preferences`, so a screenshot shows every setting.
 pub static EXPAND_ALL: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// The association of `.acmi` files with this program: where it stands and
+/// a button to change it. Returns `Some(true)` to associate, `Some(false)`
+/// to remove the association.
+fn file_association(ui: &mut egui::Ui, association: &crate::file_association::Association) -> Option<bool> {
+    use crate::file_association::Association;
+    let mut change = None;
+    egui::CollapsingHeader::new(egui::RichText::new("File association").strong()).default_open(true).show(ui, |ui| {
+        let about = "Covers .acmi, .zip.acmi and .txt.acmi: Windows goes by the last extension. \
+                     Set for your user account only; no administrator rights needed.";
+        match association {
+            Association::Ours => {
+                ui.label("Recordings (.acmi, .zip.acmi, .txt.acmi) open with this program.").on_hover_text(about);
+                if ui.button("Stop opening .acmi files with OpenACMI").clicked() {
+                    change = Some(false);
+                }
+            }
+            Association::Overridden => {
+                ui.label("OpenACMI is registered for .acmi files, but Windows is using a program you chose earlier.").on_hover_text(about);
+                ui.weak(
+                    "To switch: right-click a recording, Open with › Choose another app, pick OpenACMI and choose Always,\nor set it in Windows' default apps settings.",
+                );
+                ui.horizontal(|ui| {
+                    if ui.button("Open default apps settings").clicked() {
+                        crate::file_association::open_default_apps_settings();
+                    }
+                    if ui.button("Remove the association").clicked() {
+                        change = Some(false);
+                    }
+                });
+            }
+            Association::OtherCopy(path) => {
+                ui.label(format!("Recordings open with another copy of OpenACMI:\n{path}")).on_hover_text(about);
+                ui.horizontal(|ui| {
+                    if ui.button("Use this copy instead").clicked() {
+                        change = Some(true);
+                    }
+                    if ui.button("Remove the association").clicked() {
+                        change = Some(false);
+                    }
+                });
+            }
+            Association::NotOurs => {
+                ui.label("Recordings do not open with OpenACMI when double-clicked.").on_hover_text(about);
+                if ui.button("Open .acmi, .zip.acmi and .txt.acmi files with OpenACMI").on_hover_text(about).clicked() {
+                    change = Some(true);
+                }
+                ui.weak("If you have already chosen another program for .acmi in Windows, Windows keeps that choice;\nOpenACMI will then be listed under \"Open with\" for you to pick.");
+            }
+            Association::Unsupported => {
+                ui.weak("On this system, file associations are set through the desktop environment.");
+            }
+        }
+        ui.add_space(4.0);
+    });
+    change
+}
 
 /// A collapsible group of settings laid out as `name | control` rows, with
 /// a button that puts the group back to its defaults.

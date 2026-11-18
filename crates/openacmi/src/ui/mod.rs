@@ -27,6 +27,8 @@ pub struct UiState {
     pub error: Option<String>,
     pub connection_open: bool,
     pub preferences_open: bool,
+    /// Who opens `.acmi` files, looked up when Preferences needs it.
+    pub association: Option<crate::file_association::Association>,
     /// The object being edited in the Edit Object window, if it is open.
     pub edit_object: Option<edit_object::EditObject>,
     /// The object the context menu of the 3D view was opened on.
