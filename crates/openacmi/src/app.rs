@@ -338,6 +338,12 @@ impl App {
         if let Some(handle) = self.args.edit.take().and_then(|id| self.session.recording.find(id)) {
             self.ui.edit_object = ui::edit_object::EditObject::open(self, handle);
         }
+        if std::mem::take(&mut self.args.cockpit) {
+            self.set_camera_mode(CameraMode::Cockpit);
+        }
+        if let Some([yaw, pitch, scale]) = self.args.look.take() {
+            self.controller.set_cockpit_view(yaw, pitch, scale);
+        }
         if let Some(id) = self.args.secondary.take() {
             self.session.secondary = self.session.recording.find(id);
         }

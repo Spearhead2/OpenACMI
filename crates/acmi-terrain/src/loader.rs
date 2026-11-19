@@ -13,6 +13,7 @@ use std::sync::{Arc, Condvar, Mutex};
 
 use crate::elevation::ElevationTile;
 use crate::imagery::Imagery;
+use crate::seafloor::SeaFloor;
 use crate::shading::{shade_image, shade_tile, ElevationPalette};
 use crate::source::{FetchError, TileSource};
 use crate::surface::SurfaceTile;
@@ -45,6 +46,7 @@ struct Shared {
     source: TileSource,
     imagery: Option<Imagery>,
     palette: ElevationPalette,
+    sea_floor: SeaFloor,
     queue: Mutex<Queue>,
     wake: Condvar,
     stop: AtomicBool,
@@ -65,6 +67,7 @@ impl TileLoader {
             source,
             imagery,
             palette,
+            sea_floor: SeaFloor::default(),
             queue: Mutex::default(),
             wake: Condvar::new(),
             stop: AtomicBool::new(false),
@@ -137,15 +140,20 @@ fn worker(shared: &Shared, results: &Sender<TileResult>) {
         };
 
         // The in-flight mark is cleared by `poll`, when the owner takes the result.
-        if results.send((key, load(&shared.source, shared.imagery.as_ref(), shared.palette, key))).is_err() {
+        if results.send((key, load(shared, key))).is_err() {
             return;
         }
     }
 }
 
-fn load(source: &TileSource, imagery: Option<&Imagery>, palette: ElevationPalette, key: TileKey) -> Result<TileData, FetchError> {
+fn load(shared: &Shared, key: TileKey) -> Result<TileData, FetchError> {
+    let (source, imagery, palette) = (&shared.source, shared.imagery.as_ref(), shared.palette);
     let bytes = source.fetch(key)?;
-    let surface = SurfaceTile::resolve(key, &ElevationTile::decode_terrarium(&bytes)?);
+    let heights = ElevationTile::decode_terrarium(&bytes)?;
+    // Some tiles hold the flat sea surface where others hold the sea floor.
+    let coarser = |other: TileKey| ElevationTile::decode_terrarium(&source.fetch(other).ok()?).ok();
+    let heights = shared.sea_floor.fill(key, heights, &coarser);
+    let surface = SurfaceTile::resolve(key, &heights);
     let color = match imagery.map(|imagery| (imagery, imagery.tile(key))) {
         Some((imagery, Ok(mut image))) => {
             shade_image(key, &surface, &mut image, imagery.relief());

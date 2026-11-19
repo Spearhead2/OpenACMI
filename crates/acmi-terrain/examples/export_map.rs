@@ -22,7 +22,7 @@ use std::sync::Mutex;
 
 use acmi_terrain::shading::{shade_image, shade_tile};
 use acmi_terrain::{
-    ElevationPalette, ElevationTile, Imagery, SurfaceTile, TileKey, TileSource, DEFAULT_IMAGERY_MAX_ZOOM,
+    ElevationPalette, ElevationTile, Imagery, SeaFloor, SurfaceTile, TileKey, TileSource, DEFAULT_IMAGERY_MAX_ZOOM,
     DEFAULT_IMAGERY_URL_TEMPLATE, DEFAULT_URL_TEMPLATE, TILE_SIZE,
 };
 
@@ -35,8 +35,6 @@ enum Look {
 
 const WORKERS: usize = 12;
 const ATTEMPTS: usize = 4;
-/// How many zoom levels up to look for sea floor missing from a tile.
-const SEA_FLOOR_LEVELS_UP: u8 = 2;
 const IMAGERY_RELIEF: f32 = 0.5;
 const IMAGERY_TONE: (f32, f32, f32) = (0.9, 0.85, 1.0);
 
@@ -85,42 +83,15 @@ fn main() {
         Imagery::new(source, DEFAULT_IMAGERY_MAX_ZOOM, IMAGERY_RELIEF).with_tone(IMAGERY_TONE.0, IMAGERY_TONE.1, IMAGERY_TONE.2)
     });
 
-    // Coarser tiles, for sea floor the detailed ones lack.
-    let coarse: Mutex<HashMap<TileKey, Option<std::sync::Arc<ElevationTile>>>> = Mutex::new(HashMap::new());
-    let coarse_tile = |key: TileKey| {
-        if let Some(found) = coarse.lock().unwrap().get(&key) {
-            return found.clone();
-        }
-        let tile = elevation.fetch(key).ok().and_then(|raw| ElevationTile::decode_terrarium(&raw).ok()).map(std::sync::Arc::new);
-        coarse.lock().unwrap().insert(key, tile.clone());
-        tile
-    };
+    // Sea floor for tiles that hold the flat sea surface instead.
+    let sea_floor = SeaFloor::default();
 
     // Colour of one tile, RGBA at tile size, as the application bakes it.
     let render = |key: TileKey| -> Result<Vec<u8>, String> {
         let raw = elevation.fetch(key).map_err(|err| err.to_string())?;
-        let mut heights = ElevationTile::decode_terrarium(&raw).map_err(|err| err.to_string())?;
-        // Some tiles of the elevation set hold the flat sea surface (exactly
-        // 0 m) where their neighbours and the coarser levels hold the sea
-        // floor, which would show as pale squares in deep water. Where a
-        // sample is exactly 0 and a coarser tile says sea, use its depth.
-        if key.z >= SEA_FLOOR_LEVELS_UP && heights.heights().contains(&0.0) {
-            let shift = SEA_FLOOR_LEVELS_UP;
-            let ancestor = TileKey::new(key.z - shift, key.x >> shift, key.y >> shift);
-            if let Some(ancestor_tile) = coarse_tile(ancestor) {
-                let (size, span) = (heights.size(), (1u32 << shift) as f64);
-                let (offset_x, offset_y) = ((key.x & ((1 << shift) - 1)) as f64, (key.y & ((1 << shift) - 1)) as f64);
-                let mut patched = heights.heights().to_vec();
-                for (index, height) in patched.iter_mut().enumerate().filter(|(_, height)| **height == 0.0) {
-                    let (column, row) = ((index % size) as f64 + 0.5, (index / size) as f64 + 0.5);
-                    let floor = ancestor_tile.sample((offset_x + column / size as f64) / span, (offset_y + row / size as f64) / span);
-                    if floor < 0.0 {
-                        *height = floor;
-                    }
-                }
-                heights = ElevationTile::from_heights(size, patched);
-            }
-        }
+        let heights = ElevationTile::decode_terrarium(&raw).map_err(|err| err.to_string())?;
+        let coarser = |other: TileKey| ElevationTile::decode_terrarium(&elevation.fetch(other).ok()?).ok();
+        let heights = sea_floor.fill(key, heights, &coarser);
         let surface = SurfaceTile::resolve(key, &heights);
         Ok(match (&look, &imagery) {
             (Look::Elevation(palette), _) => shade_tile(key, &surface, *palette),

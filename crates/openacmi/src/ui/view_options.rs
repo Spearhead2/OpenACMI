@@ -19,6 +19,8 @@ pub(super) fn contents(app: &mut App, ui: &mut egui::Ui) {
         app.set_camera_mode(mode);
     }
     ui.add(egui::Slider::new(&mut app.settings.camera.fov_deg, 20.0..=100.0).text("FOV").suffix("°"));
+    ui.checkbox(&mut app.settings.hud.show, "HUD in cockpit view")
+        .on_hover_text("A head-up display over the cockpit view of an aircraft: pitch ladder, flight path marker, heading, speed and altitude");
 
     ui.separator();
     ui.strong("Ground");

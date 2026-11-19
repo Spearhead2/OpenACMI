@@ -70,6 +70,12 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             painter.circle_stroke(position, PICK_RADIUS, (1.5, color));
         }
     }
+    // The cockpit of an aircraft gets its head-up display.
+    let in_cockpit = app.controller.mode() == CameraMode::Cockpit;
+    let flown = app.session.primary.and_then(|handle| app.session.recording.get(handle)).is_some_and(super::hud::applies_to);
+    if app.settings.hud.show && in_cockpit && flown {
+        super::hud::paint(app, &painter, rect);
+    }
     paint_status(app, &painter, rect, &ctx);
     paint_progress(app, &painter, rect);
     if app.terrain_busy() {
@@ -102,7 +108,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
     // ── Context menu ─────────────────────────────────────────────────────────
     // Right-clicking an object opens a menu for it; elsewhere, nothing.
     if response.secondary_clicked() {
-        app.ui.context_object = hovered;
+        app.ui.context_object = hovered.filter(|_| !std::mem::take(&mut app.ui.right_button_zoomed));
     }
     if let Some(handle) = app.ui.context_object.filter(|&handle| app.session.recording.get(handle).is_some()) {
         response.context_menu(|ui| {
@@ -209,7 +215,19 @@ fn gather_camera_input(
 
     if response.contains_pointer() {
         // One wheel notch scrolls about 50 points.
-        input.zoom = ctx.input(|i| i.smooth_scroll_delta.y) / 50.0;
+        let (scroll, right_held) = ctx.input(|i| (i.smooth_scroll_delta.y, i.pointer.button_down(egui::PointerButton::Secondary)));
+        // In the cockpit the wheel zooms only while the right button is
+        // held: the right button alone looks around, the wheel alone is
+        // left free so a stray scroll does not change the view.
+        if app.controller.mode() != CameraMode::Cockpit || right_held {
+            input.zoom += scroll / 50.0;
+        }
+        // A right-button press used for zooming is not a request for the menu.
+        if right_held && scroll != 0.0 {
+            app.ui.right_button_zoomed = true;
+        } else if !right_held && !response.secondary_clicked() {
+            app.ui.right_button_zoomed = false;
+        }
     }
 
     if !ctx.egui_wants_keyboard_input() {

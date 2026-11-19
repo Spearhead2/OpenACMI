@@ -103,6 +103,7 @@ pub struct Settings {
     pub trails: Trails,
     pub lighting: Lighting,
     pub camera: CameraSettings,
+    pub hud: Hud,
     pub panels: Panels,
     pub graphs: Graphs,
     pub recent_files: RecentFiles,
@@ -519,6 +520,22 @@ pub struct Lighting {
 impl Default for Lighting {
     fn default() -> Self {
         Self { enabled: true, ambient: 0.35, follow_recording_time: true, sun_longitude_deg: 30.0, sun_latitude_deg: 20.0 }
+    }
+}
+
+/// The head-up display drawn over the cockpit view.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Hud {
+    pub show: bool,
+    pub color: Rgba,
+    /// Size of the symbology; 1 suits a view about 900 pixels high.
+    pub scale: f32,
+}
+
+impl Default for Hud {
+    fn default() -> Self {
+        Self { show: true, color: Rgba::rgb(60, 255, 110), scale: 1.0 }
     }
 }
 

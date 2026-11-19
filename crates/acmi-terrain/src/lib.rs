@@ -20,6 +20,7 @@
 pub mod elevation;
 pub mod imagery;
 pub mod loader;
+pub mod seafloor;
 pub mod shading;
 pub mod source;
 pub mod surface;
@@ -28,6 +29,7 @@ pub mod tile;
 pub use elevation::ElevationTile;
 pub use imagery::{Imagery, DEFAULT_IMAGERY_ATTRIBUTION, DEFAULT_IMAGERY_MAX_ZOOM, DEFAULT_IMAGERY_URL_TEMPLATE};
 pub use loader::{TileData, TileLoader, TileResult};
+pub use seafloor::SeaFloor;
 pub use shading::ElevationPalette;
 pub use source::{FetchError, TileSource, DEFAULT_URL_TEMPLATE};
 pub use surface::{basin_at, Basin, Surface, SurfaceTile, BASINS};

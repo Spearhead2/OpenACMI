@@ -36,6 +36,11 @@ pub struct Args {
     pub track: Option<u64>,
     /// Development aid: object id (hex) to open the Edit Object window for.
     pub edit: Option<u64>,
+    /// Development aid: start in the cockpit of the tracked object.
+    pub cockpit: bool,
+    /// Development aid: in the cockpit, look `yaw,pitch` degrees off the
+    /// nose with the field of view scaled by a third number.
+    pub look: Option<[f64; 3]>,
     /// Development aid: start with the Preferences window open.
     pub preferences: bool,
     /// Development aid: object id (hex) to select as the secondary object.
@@ -51,6 +56,13 @@ impl Args {
                 "--screenshot" => args.screenshot = raw.next().map(PathBuf::from),
                 "--seek" => args.seek = raw.next().and_then(|v| v.parse().ok()),
                 "--preferences" => args.preferences = true,
+                "--cockpit" => args.cockpit = true,
+                "--look" => {
+                    let numbers: Vec<f64> = raw.next().unwrap_or_default().split(',').filter_map(|v| v.parse().ok()).collect();
+                    if let [yaw, pitch, scale] = numbers[..] {
+                        args.look = Some([yaw, pitch, scale]);
+                    }
+                }
                 "--edit" => args.edit = raw.next().and_then(|v| u64::from_str_radix(&v, 16).ok()),
                 "--secondary" => args.secondary = raw.next().and_then(|v| u64::from_str_radix(&v, 16).ok()),
                 "--track" => args.track = raw.next().and_then(|v| u64::from_str_radix(&v, 16).ok()),
