@@ -214,6 +214,23 @@ says so and the telemetry panel marks the stand-in as `(generic)`.
 * **A new data source**: anything that can produce ACMI lines can feed
   `Parser::feed_line`, exactly as the telemetry client does.
 
+## Exporting map pictures
+
+`export_map` writes a flat picture of a latitude / longitude box, coloured the
+way the globe is, at any size:
+
+```bash
+cargo run --release -p acmi-terrain --example export_map -- 26 28 38 42 8192 natural map.png
+```
+
+The arguments are south, west, north, east, the width in pixels, the look
+(`satellite`, or an elevation scheme: `natural`, `atlas`, `arid`, `greyscale`,
+`dark`) and the output file; an optional eighth names the tile cache folder.
+The picture is equirectangular, so its height follows from the width and the
+box, and pixels convert to coordinates by proportion. It shows the ground
+colours as baked into tiles, without the application's sun lighting or
+atmosphere.
+
 ## Differences from the Godot version
 
 Added: lossless loading by default (frame decimation is now opt-in via
