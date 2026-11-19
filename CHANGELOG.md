@@ -9,10 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [v0.2.0] - 2026-11-19
+
 ### Added
+- A head-up display in the cockpit view of an aircraft, drawn on a plane fixed to the airframe
+- A simpler display in the cockpit view of a weapon: a reticle around the nose, flight path marker, Mach, airspeed, altitude and the box on the secondary object
+- Zoom in the cockpit view by holding the right mouse button and turning the wheel
 - `export_map`, a command-line tool that exports a flat map picture of any latitude / longitude box in the satellite look or an elevation colour scheme
 
 ### Fixed
+- Pale rectangles in deep water: sea tiles that hold the flat water surface now take their depth from coarser tiles
 - Around the Dead Sea: the Arava and the plain of Sodom were drawn as sea, the evaporation ponds south of the Dead Sea were missing, and the Yarmouk gorge showed a sliver of false water
 
 ---
@@ -56,5 +64,6 @@ Initial source release. OpenACMI is now written in Rust, on wgpu and egui.
 
 ---
 
+[v0.2.0]: https://github.com/Spearhead2/OpenACMI/releases/tag/v0.2.0
 [v0.1.1]: https://github.com/Spearhead2/OpenACMI/releases/tag/v0.1.1
 [v0.1.0]: https://github.com/Spearhead2/OpenACMI/releases/tag/v0.1.0

@@ -68,6 +68,7 @@ Linux and macOS are not packaged yet. The code is meant to be portable, but so f
 ### Interface
 - Every panel can be **docked** to the left, right, top or bottom of the 3D view, or undocked into a floating window
 - Four camera modes: global orbit, tracking, cockpit and free flight
+- A **head-up display** in the cockpit view: pitch ladder, flight path marker, heading, speed and altitude tapes, and a box on the secondary object. Weapons get a simpler one: a reticle, flight path marker, Mach, airspeed and altitude
 - **Right-click an object** to edit its identity or choose a different 3D model
 - A Preferences window for everything else; the window, its panels and all settings are remembered between runs
 
@@ -91,6 +92,7 @@ The Telemetry panel shows which model file each object is drawn with, and the 3D
 |---|---|
 | Left / right drag | Orbit (global, tracking), look around (cockpit, free flight) |
 | Wheel, `+` / `-` | Zoom; in free flight, change speed |
+| Right button + wheel in the cockpit | Zoom in and out |
 | `W A S D`, arrows | Orbit / fly; `Q` `E` down / up in free flight; `Shift` = faster |
 | Click an object | Select as primary (`Ctrl` / `Shift` + click: secondary) |
 | Right-click an object | Menu: edit object, select as primary or secondary |
