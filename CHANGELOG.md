@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+- `export_map`, a command-line tool that exports a flat map picture of any latitude / longitude box in the satellite look or an elevation colour scheme
+
+### Fixed
+- Around the Dead Sea: the Arava and the plain of Sodom were drawn as sea, the evaporation ponds south of the Dead Sea were missing, and the Yarmouk gorge showed a sliver of false water
+
+---
+
 ## [v0.1.1] - 2026-11-18
 
 ### Added

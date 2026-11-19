@@ -42,9 +42,15 @@ const fn basin(name: &'static str, west: f64, south: f64, east: f64, north: f64,
 /// which can differ from today's by a few metres.
 pub const BASINS: &[Basin] = &[
     // Jordan Rift Valley.
-    basin("Dead Sea", 35.33, 30.90, 35.62, 31.80, Some(-412.0)),
+    // The Dead Sea is two bodies of water at different levels: the sea
+    // proper, and the evaporation ponds that fill its former southern basin.
+    basin("Dead Sea evaporation ponds", 35.33, 30.90, 35.55, 31.27, Some(-389.0)),
+    basin("Dead Sea", 35.33, 31.27, 35.62, 31.80, Some(-410.0)),
     basin("Sea of Galilee", 35.50, 32.68, 35.68, 32.92, Some(-212.0)),
-    basin("Jordan Rift Valley", 35.30, 30.50, 35.75, 33.20, None),
+    // East to take in the Yarmouk gorge, south and west for the Arava and
+    // the plain of Sodom; the Mediterranean is nowhere near either box.
+    basin("Jordan Rift Valley", 35.30, 30.20, 35.95, 33.20, None),
+    basin("Arava and Sodom plain", 35.00, 30.20, 35.30, 31.45, None),
     // North America.
     basin("Salton Sea", -116.15, 33.00, -115.50, 33.55, Some(-70.0)),
     basin("Salton Trough", -116.30, 32.00, -115.00, 33.80, None),
@@ -235,8 +241,8 @@ mod tests {
         assert_eq!(dead_sea.map(|basin| basin.name), Some("Dead Sea"));
         // Whatever the DEM says lies under it, a lake has one depth: the data
         // holds the bed in some tiles and the water surface in others.
-        assert_eq!(Surface::classify(-416.0, dead_sea), Surface::Water { level: -412.0, depth: LAKE_DEPTH_M });
-        assert_eq!(Surface::classify(-700.0, dead_sea), Surface::Water { level: -412.0, depth: LAKE_DEPTH_M });
+        assert_eq!(Surface::classify(-416.0, dead_sea), Surface::Water { level: -410.0, depth: LAKE_DEPTH_M });
+        assert_eq!(Surface::classify(-700.0, dead_sea), Surface::Water { level: -410.0, depth: LAKE_DEPTH_M });
         assert_eq!(Surface::classify(-380.0, dead_sea), Surface::Land(-380.0));
 
         assert!(Surface::classify(-80.0, basin_at(36.23, -116.83)) == Surface::Land(-80.0), "Badwater, Death Valley");
@@ -265,7 +271,7 @@ mod tests {
         let row = (0..size as isize).find(|&row| key.latitude((row as f64 + 0.5) / size as f64) < 31.6).unwrap();
 
         // In the lake: water at the lake's level.
-        assert_eq!(tile.surface(column(35.5), row), Surface::Water { level: -412.0, depth: LAKE_DEPTH_M });
+        assert_eq!(tile.surface(column(35.5), row), Surface::Water { level: -410.0, depth: LAKE_DEPTH_M });
         // West of the basin the same height would be sea floor.
         assert_eq!(tile.surface(column(35.2), row), Surface::Water { level: 0.0, depth: 416.0 });
         // North of the lake the tile reaches the dry valley floor, which keeps its height.
