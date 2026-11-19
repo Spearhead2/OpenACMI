@@ -66,6 +66,9 @@ pub struct TrackTarget {
 const MIN_ALTITUDE_M: f64 = 200.0;
 const MAX_ALTITUDE_M: f64 = EARTH_RADIUS_M * 6.0;
 const MIN_TRACK_DISTANCE_M: f64 = 15.0;
+/// Limits of the cockpit zoom, as fractions of the configured field of view.
+const COCKPIT_MIN_FOV_SCALE: f64 = 0.08;
+const COCKPIT_MAX_FOV_SCALE: f64 = 1.6;
 const MAX_TRACK_DISTANCE_M: f64 = 2.0e6;
 
 #[derive(Debug, Clone)]
@@ -79,6 +82,8 @@ pub struct CameraController {
     orbit_yaw: f64,
     orbit_pitch: f64,
     orbit_distance: f64,
+    /// Cockpit zoom: the field of view as a fraction of the configured one.
+    cockpit_fov_scale: f64,
     // Free flight.
     free_position: DVec3,
     free_yaw: f64,
@@ -96,6 +101,7 @@ impl CameraController {
             orbit_yaw: 0.0,
             orbit_pitch: 20.0,
             orbit_distance: settings.tracking_distance_m,
+            cockpit_fov_scale: 1.0,
             free_position: geo::geo_to_world(25.0, 20.0, EARTH_RADIUS_M),
             free_yaw: 0.0,
             free_pitch: -30.0,
@@ -108,6 +114,14 @@ impl CameraController {
     }
 
     /// Switches mode, carrying the current view over where that makes sense.
+    /// Turns the head and zooms in the cockpit: degrees right and up of the
+    /// nose, and the field of view as a fraction of the configured one.
+    pub fn set_cockpit_view(&mut self, yaw_deg: f64, pitch_deg: f64, fov_scale: f64) {
+        self.orbit_yaw = yaw_deg.clamp(-170.0, 170.0);
+        self.orbit_pitch = pitch_deg.clamp(-80.0, 80.0);
+        self.cockpit_fov_scale = fov_scale.clamp(COCKPIT_MIN_FOV_SCALE, COCKPIT_MAX_FOV_SCALE);
+    }
+
     pub fn set_mode(&mut self, mode: CameraMode, camera: &Camera, settings: &CameraSettings) {
         if mode == self.mode {
             return;
@@ -127,6 +141,7 @@ impl CameraController {
             CameraMode::Cockpit => {
                 self.orbit_yaw = 0.0;
                 self.orbit_pitch = 0.0;
+                self.cockpit_fov_scale = 1.0;
             }
             CameraMode::Free => {
                 let frame = LocalFrame::at(camera.eye);
@@ -168,7 +183,12 @@ impl CameraController {
                 camera.look_at(target.position, frame.up);
             }
             (CameraMode::Cockpit, Some(target)) => {
-                let sensitivity = settings.orbit_sensitivity as f64;
+                // Zooming narrows the field of view, like raising binoculars.
+                self.cockpit_fov_scale = (self.cockpit_fov_scale * zoom).clamp(COCKPIT_MIN_FOV_SCALE, COCKPIT_MAX_FOV_SCALE);
+                camera.fov_y = (camera.fov_y as f64 * self.cockpit_fov_scale).clamp(2f64.to_radians(), 120f64.to_radians()) as f32;
+                // The view turns more slowly when zoomed in, so that a drag
+                // moves the picture by the same amount on screen.
+                let sensitivity = settings.orbit_sensitivity as f64 * self.cockpit_fov_scale.min(1.0);
                 self.orbit_yaw = (self.orbit_yaw + input.drag.x as f64 * sensitivity).clamp(-170.0, 170.0);
                 self.orbit_pitch = (self.orbit_pitch - input.drag.y as f64 * sensitivity).clamp(-80.0, 80.0);
                 camera.eye = target.position;

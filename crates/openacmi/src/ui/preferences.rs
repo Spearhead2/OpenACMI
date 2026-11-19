@@ -37,6 +37,7 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
                     associate = Some(change);
                 }
                 camera(ui, settings);
+                hud(ui, settings);
                 objects(ui, settings);
                 scaling(ui, settings);
                 trails(ui, settings);
@@ -221,6 +222,23 @@ fn camera(ui: &mut egui::Ui, settings: &mut Settings) {
     });
     if do_reset {
         *camera = Default::default();
+    }
+}
+
+fn hud(ui: &mut egui::Ui, settings: &mut Settings) {
+    let hud = &mut settings.hud;
+    let mut do_reset = false;
+    section(ui, "Cockpit HUD", false, || do_reset = true, |ui| {
+        row(ui, "Show in cockpit view", "A head-up display over the cockpit view of an aircraft", |ui| {
+            ui.checkbox(&mut hud.show, "");
+        });
+        row(ui, "Colour", "Colour of the symbology", |ui| color(ui, &mut hud.color));
+        row(ui, "Size", "Size of the symbology", |ui| {
+            ui.add(egui::Slider::new(&mut hud.scale, 0.5..=2.0).suffix("×"));
+        });
+    });
+    if do_reset {
+        *hud = Default::default();
     }
 }
 

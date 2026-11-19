@@ -6,6 +6,7 @@ pub mod dialogs;
 pub mod edit_object;
 pub mod format;
 pub mod graph;
+pub mod hud;
 pub mod menu;
 pub mod panels;
 pub mod preferences;
@@ -31,6 +32,9 @@ pub struct UiState {
     pub association: Option<crate::file_association::Association>,
     /// The object being edited in the Edit Object window, if it is open.
     pub edit_object: Option<edit_object::EditObject>,
+    /// The right button was held while the wheel zoomed, so releasing it
+    /// should not open the context menu.
+    pub right_button_zoomed: bool,
     /// The object the context menu of the 3D view was opened on.
     pub context_object: Option<ObjectHandle>,
     pub primary_filter: String,
