@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [v0.2.1] - 2026-11-19
+
 ### Added
 - A night sky of real stars: the 9,096 stars of the Yale Bright Star Catalogue, placed for the recorded date and time, with their brightness and colour, dimmed by the air and hidden by daylight. Switch it in the View panel; brightness is in Preferences
 - Preferences shows how much disk space the downloaded terrain and imagery tiles take, with buttons to clear them and to open the folder
@@ -68,6 +72,7 @@ Initial source release. OpenACMI is now written in Rust, on wgpu and egui.
 
 ---
 
+[v0.2.1]: https://github.com/Spearhead2/OpenACMI/releases/tag/v0.2.1
 [v0.2.0]: https://github.com/Spearhead2/OpenACMI/releases/tag/v0.2.0
 [v0.1.1]: https://github.com/Spearhead2/OpenACMI/releases/tag/v0.1.1
 [v0.1.0]: https://github.com/Spearhead2/OpenACMI/releases/tag/v0.1.0
