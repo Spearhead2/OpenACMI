@@ -17,6 +17,7 @@
 //! The default source is the public "Terrain Tiles" dataset on AWS Open
 //! Data (Mapzen Terrarium encoding), which needs no account or key.
 
+pub mod cache;
 pub mod elevation;
 pub mod imagery;
 pub mod loader;

@@ -43,7 +43,7 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
                 trails(ui, settings);
                 lighting(ui, settings);
                 atmosphere(ui, settings);
-                terrain(ui, settings);
+                terrain(ui, settings, &mut app.ui.tile_cache);
                 imagery(ui, settings);
                 grid(ui, settings);
                 ui.add_space(8.0);
@@ -401,7 +401,7 @@ fn atmosphere(ui: &mut egui::Ui, settings: &mut Settings) {
     }
 }
 
-fn terrain(ui: &mut egui::Ui, settings: &mut Settings) {
+fn terrain(ui: &mut egui::Ui, settings: &mut Settings, cache: &mut super::tile_cache::TileCache) {
     let terrain = &mut settings.terrain;
     let mut do_reset = false;
     section(ui, "Terrain", false, || do_reset = true, |ui| {
@@ -426,6 +426,7 @@ fn terrain(ui: &mut egui::Ui, settings: &mut Settings) {
         row(ui, "Cache folder", "Where downloaded tiles are kept; empty for the usual place. Never emptied automatically.", |ui| {
             text(ui, &mut terrain.cache_dir, "default location");
         });
+        row(ui, "Downloaded tiles", "Disk space taken by the terrain and imagery tiles downloaded so far", |ui| cache.ui(ui, terrain));
     });
     if do_reset {
         let imagery = terrain.clone();
