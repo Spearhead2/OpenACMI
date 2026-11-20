@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v0.2.2] - 2026-11-20
+
+### Fixed
+- Lakes above sea level were drawn as land. The Great Lakes and 56 other large lakes around the world are now water, among them Victoria, Tanganyika, Malawi, Baikal, Great Bear, Great Slave, Winnipeg, Titicaca, Ladoga and Onega
+
+---
+
 ## [v0.2.1] - 2026-11-19
 
 ### Added
@@ -72,6 +79,7 @@ Initial source release. OpenACMI is now written in Rust, on wgpu and egui.
 
 ---
 
+[v0.2.2]: https://github.com/Spearhead2/OpenACMI/releases/tag/v0.2.2
 [v0.2.1]: https://github.com/Spearhead2/OpenACMI/releases/tag/v0.2.1
 [v0.2.0]: https://github.com/Spearhead2/OpenACMI/releases/tag/v0.2.0
 [v0.1.1]: https://github.com/Spearhead2/OpenACMI/releases/tag/v0.1.1
