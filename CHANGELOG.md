@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [v0.3.0] - 2026-11-20
+
 ### Added
 - Updates: OpenACMI checks GitHub for a newer release when it starts and shows a notice in the corner of the 3D view, with buttons to install it, read the release notes or dismiss it. Installing downloads the release, checks it against its published SHA-256 and replaces the program's files in the background; the new version runs after a restart
 - An About menu, with the version, the switch for the update check and "Check for Updates Now"
@@ -83,6 +87,7 @@ Initial source release. OpenACMI is now written in Rust, on wgpu and egui.
 
 ---
 
+[v0.3.0]: https://github.com/Spearhead2/OpenACMI/releases/tag/v0.3.0
 [v0.2.2]: https://github.com/Spearhead2/OpenACMI/releases/tag/v0.2.2
 [v0.2.1]: https://github.com/Spearhead2/OpenACMI/releases/tag/v0.2.1
 [v0.2.0]: https://github.com/Spearhead2/OpenACMI/releases/tag/v0.2.0
