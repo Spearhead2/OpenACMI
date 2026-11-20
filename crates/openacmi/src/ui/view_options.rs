@@ -50,6 +50,7 @@ pub(super) fn contents(app: &mut App, ui: &mut egui::Ui) {
     ui.checkbox(&mut settings.grid.show, "Latitude / longitude grid");
     ui.checkbox(&mut settings.borders.show, "Country borders");
     ui.checkbox(&mut settings.earth.show_atmosphere, "Atmosphere");
+    ui.checkbox(&mut settings.earth.show_stars, "Stars").on_hover_text("The stars seen with the naked eye, placed for the recorded date and time");
     ui.checkbox(&mut settings.lighting.enabled, "Sun lighting");
     ui.add_enabled(
         settings.lighting.enabled,

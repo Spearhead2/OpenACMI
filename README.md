@@ -40,6 +40,7 @@ Linux and macOS are not packaged yet. The code is meant to be portable, but so f
 - **Streamed 3D terrain** from real elevation data, including land below sea level such as the Dead Sea
 - **Satellite imagery** draped over the terrain, or a choice of elevation colour schemes (natural, atlas, arid, greyscale, dark)
 - A physically based atmosphere: sky, haze with distance, and red light near the terminator
+- A real night sky: the 9,000 stars seen with the naked eye, in their true places for the recorded date and time, fading at dusk and dawn
 - The sun where it really was at the recording's date and time
 
 ### Recordings
@@ -266,6 +267,7 @@ You are free to use, modify, and distribute OpenACMI for any purpose, including 
 - [Tacview](https://www.tacview.net/) by Frantz 'Vyrtuoz' Raia - for the inspiration and the ACMI format specification that makes this possible.
 - The Falcon BMS, DCS World, and IL-2 communities - for years of ACMI tooling, exporters, and feedback.
 - [Natural Earth](https://www.naturalearthdata.com/) - country border data.
+- Stars: the [Yale Bright Star Catalogue](http://tdc-www.harvard.edu/catalogs/bsc5.html), 5th revised edition (Hoffleit & Warren, 1991), public domain. `tools/build_stars.py` converts it to `assets/stars.bin`.
 - Terrain elevation: [Terrain Tiles](https://registry.opendata.aws/terrain-tiles/) hosted on AWS, originally by Mapzen, built from SRTM, GMTED, ETOPO1 and other open sources.
 - Satellite imagery: [Sentinel-2 cloudless](https://s2maps.eu) by [EOX IT Services GmbH](https://eox.at) (contains modified Copernicus Sentinel data 2016 & 2017), CC BY 4.0. Imagery is streamed from EOX's servers; if you use it heavily, please point OpenACMI at your own tile server in Preferences.
 - The Rust graphics community, in particular [wgpu](https://wgpu.rs/) and [egui](https://www.egui.rs/).

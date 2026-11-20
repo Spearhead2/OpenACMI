@@ -10,7 +10,7 @@ use acmi_io::{LoadJob, LoadOptions, RttClient, RttConfig, RttMessage};
 use acmi_render::acmi_terrain::{Imagery, TileLoader, TileSource};
 use acmi_render::wgpu;
 use acmi_render::{
-    Atmosphere, Camera, EarthImage, Frame, GridStyle, LineVertex, MeshLibrary, Renderer, RendererConfig, TerrainConfig,
+    Atmosphere, Stars, Camera, EarthImage, Frame, GridStyle, LineVertex, MeshLibrary, Renderer, RendererConfig, TerrainConfig,
     TerrainStats,
 };
 use eframe::egui_wgpu;
@@ -96,7 +96,12 @@ impl App {
                 border_color: settings.borders.color.0,
             };
             earth_image = Some(spawn_earth_loader(&settings, &assets, Renderer::max_texture_width(&state.device), &cc.egui_ctx));
-            Renderer::new(&state.device, &state.queue, &config, &borders)
+            let mut renderer = Renderer::new(&state.device, &state.queue, &config, &borders);
+            match std::fs::read(assets.join("stars.bin")).ok().and_then(|bytes| acmi_render::stars::parse_catalogue(&bytes)) {
+                Some(stars) => renderer.set_stars(&state.device, &stars),
+                None => log::warn!("star catalogue unavailable: the sky will have no stars"),
+            }
+            renderer
         });
         if renderer.is_none() {
             log::error!("no wgpu render state: the 3D view is unavailable");
@@ -454,10 +459,13 @@ impl App {
         }
 
         let lighting = &self.settings.lighting;
-        let (sun_lat, sun_lon) = match recording.absolute_time(time).filter(|_| lighting.follow_recording_time) {
+        let recorded = recording.absolute_time(time).filter(|_| lighting.follow_recording_time);
+        let (sun_lat, sun_lon) = match recorded {
             Some(utc) => sun::subsolar_point(utc),
             None => (lighting.sun_latitude_deg as f64, lighting.sun_longitude_deg as f64),
         };
+        // With the sun placed by hand there is no date to turn the sky to.
+        let sky_rotation = sun::sky_rotation(recorded.unwrap_or(sun::Y2000));
         let earth = &self.settings.earth;
         renderer.render(
             device,
@@ -478,6 +486,7 @@ impl App {
                     .then_some(Atmosphere { density: earth.atmosphere_strength, exposure: earth.atmosphere_exposure }),
                 instances: &self.scene.instances,
                 overlay_lines: &overlay,
+                stars: earth.show_stars.then_some(Stars { rotation: sky_rotation, brightness: earth.star_brightness }),
             },
         );
         self.scene_texture
