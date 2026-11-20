@@ -241,3 +241,50 @@ fn fs_sky(in: SkyOut) -> @location(0) vec4<f32> {
     let through = (air.transmittance.r + air.transmittance.g + air.transmittance.b) / 3.0;
     return vec4<f32>(air.light, 1.0 - through);
 }
+
+// The stars: one small soft disc each, at the far plane like the sky and
+// added to it. A star is dimmed by the air its light crosses and drowned
+// out by a bright sky, so the stars come out at dusk and from orbit.
+const STAR_STEPS: i32 = 8;
+// Sky brightness (linear, tone-mapped) at which the stars are gone: a
+// little into dusk. The day sky overhead is several times brighter.
+const STAR_DAYLIGHT: f32 = 0.005;
+
+struct StarOut {
+    @builtin(position) clip: vec4<f32>,
+    // Position within the disc: the edge is at length 1.
+    @location(0) offset: vec2<f32>,
+    @location(1) color: vec3<f32>,
+};
+
+@vertex
+fn vs_star(@builtin(vertex_index) index: u32, @location(0) star: vec4<f32>, @location(1) color: vec4<f32>) -> StarOut {
+    var out: StarOut;
+    let corner = vec2<f32>(f32(index & 1u), f32((index >> 1u) & 1u)) * 2.0 - 1.0;
+    let dir = normalize((globals.star_rotation * vec4<f32>(star.xyz, 0.0)).xyz);
+    // A square facing the eye, `star.w` pixels from centre to edge.
+    let reach = star.w * globals.star_params.y * globals.params.z;
+    let point = dir + (normalize(globals.sky_right.xyz) * corner.x + normalize(globals.sky_up.xyz) * corner.y) * reach;
+    let clip = globals.view_proj * vec4<f32>(point, 1.0);
+    out.clip = vec4<f32>(clip.xy, 0.0, clip.w);
+    out.offset = corner;
+
+    var seen = globals.star_params.x;
+    if (globals.atmosphere.x > 0.0) {
+        let air = scatter(eye_km(), dir, 1e9, STAR_STEPS);
+        let through = (air.transmittance.r + air.transmittance.g + air.transmittance.b) / 3.0;
+        let sky = dot(air.light, vec3<f32>(0.2126, 0.7152, 0.0722));
+        let dark = clamp(1.0 - sky / STAR_DAYLIGHT, 0.0, 1.0);
+        seen *= through * dark * dark;
+    }
+    out.color = color.rgb * seen;
+    return out;
+}
+
+@fragment
+fn fs_star(in: StarOut) -> @location(0) vec4<f32> {
+    let distance = dot(in.offset, in.offset);
+    // A Gaussian that reaches zero at the edge of the disc.
+    let glow = max(exp(-4.0 * distance) - exp(-4.0), 0.0) / (1.0 - exp(-4.0));
+    return vec4<f32>(in.color * glow, 0.0);
+}

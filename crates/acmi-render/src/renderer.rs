@@ -7,7 +7,7 @@
 //! Draw order per frame:
 //!
 //! 1. globe, or streamed terrain plus polar caps (opaque, writes depth)
-//! 2. sky (full screen, only where no ground was drawn)
+//! 2. sky (full screen, only where no ground was drawn), then the stars over it
 //! 4. object models (opaque, instanced)
 //! 5. trails: ribbons, then lines (alpha blended, depth tested)
 //! 6. overlay lines (always on top)
@@ -17,7 +17,7 @@ use std::path::{Path, PathBuf};
 
 use acmi_core::geo::EARTH_RADIUS_M;
 use bytemuck::{Pod, Zeroable};
-use glam::{DVec3, Mat4, Quat, Vec3};
+use glam::{DVec3, Mat3, Mat4, Quat, Vec3};
 use rustc_hash::FxHashMap;
 use wgpu::util::DeviceExt;
 
@@ -25,6 +25,7 @@ use crate::camera::Camera;
 use crate::earth_texture::EarthImage;
 use crate::geometry::{self, GridStyle, LineVertex, RibbonVertex, RtePosition, SphereVertex};
 use crate::mesh::{self, CpuMesh, MeshVertex};
+use crate::stars::{Star, StarInstance};
 use crate::terrain::{TerrainConfig, TerrainLayer, TerrainStats};
 
 const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
@@ -84,6 +85,19 @@ pub struct Frame<'a> {
     pub atmosphere: Option<Atmosphere>,
     pub instances: &'a [ModelInstance],
     pub overlay_lines: &'a [LineVertex],
+    /// The night sky, if it is shown and the catalogue is loaded
+    /// (see [`Renderer::set_stars`]).
+    pub stars: Option<Stars>,
+}
+
+/// How the stars are drawn this frame.
+#[derive(Debug, Clone, Copy)]
+pub struct Stars {
+    /// Rotation from the equatorial frame of the catalogue to the world:
+    /// where the turning Earth has the sky at the time shown.
+    pub rotation: Mat3,
+    /// 1 is the normal brightness.
+    pub brightness: f32,
 }
 
 #[repr(C)]
@@ -99,6 +113,8 @@ struct Globals {
     sky_right: [f32; 4],
     sky_up: [f32; 4],
     sky_forward: [f32; 4],
+    star_rotation: [[f32; 4]; 4],
+    star_params: [f32; 4],
 }
 
 #[repr(C)]
@@ -172,6 +188,7 @@ struct Pipelines {
     terrain: wgpu::RenderPipeline,
     polar_caps: wgpu::RenderPipeline,
     sky: wgpu::RenderPipeline,
+    stars: wgpu::RenderPipeline,
     surface_lines: wgpu::RenderPipeline,
     trails: wgpu::RenderPipeline,
     ribbons: wgpu::RenderPipeline,
@@ -193,6 +210,8 @@ pub struct Renderer {
     grid_range: Range<u32>,
     fine_grid_range: Range<u32>,
     border_range: Range<u32>,
+    /// The star catalogue on the GPU, and how many stars it holds.
+    stars: Option<(wgpu::Buffer, u32)>,
     trails: DynamicBuffer,
     ribbons: DynamicBuffer,
     overlay: DynamicBuffer,
@@ -333,6 +352,19 @@ impl Renderer {
             }),
         ];
 
+        let star_attributes = wgpu::vertex_attr_array![0 => Float32x4, 1 => Float32x4];
+        let star_buffers = [Some(wgpu::VertexBufferLayout {
+            array_stride: size_of::<StarInstance>() as u64,
+            step_mode: wgpu::VertexStepMode::Instance,
+            attributes: &star_attributes,
+        })];
+        // Light adds to what is behind it.
+        let additive = wgpu::BlendComponent {
+            src_factor: wgpu::BlendFactor::One,
+            dst_factor: wgpu::BlendFactor::One,
+            operation: wgpu::BlendOperation::Add,
+        };
+
         let triangles = wgpu::PrimitiveTopology::TriangleList;
         let lines = wgpu::PrimitiveTopology::LineList;
         let build = |spec: PipelineSpec<'_>| create_pipeline(device, samples, spec);
@@ -382,6 +414,18 @@ impl Renderer {
                 cull: None,
                 depth: Depth::Background,
                 blend: Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),
+            }),
+            stars: build(PipelineSpec {
+                label: "stars",
+                layout: &plain_layout,
+                shader: &globe_shader,
+                entry_points: ("vs_star", "fs_star"),
+                buffers: &star_buffers,
+                // One square per star, as a strip of two triangles.
+                topology: wgpu::PrimitiveTopology::TriangleStrip,
+                cull: None,
+                depth: Depth::Background,
+                blend: Some(wgpu::BlendState { color: additive, alpha: additive }),
             }),
             surface_lines: build(PipelineSpec {
                 label: "surface lines",
@@ -471,6 +515,7 @@ impl Renderer {
             grid_range,
             fine_grid_range,
             border_range,
+            stars: None,
             trails: DynamicBuffer::new("trails"),
             ribbons: DynamicBuffer::new("ribbon trails"),
             overlay: DynamicBuffer::new("overlay lines"),
@@ -550,6 +595,19 @@ impl Renderer {
     }
 
     /// Largest Earth map width this device can hold.
+    /// Sets the stars of the night sky (see [`crate::stars::parse_catalogue`]).
+    pub fn set_stars(&mut self, device: &wgpu::Device, stars: &[Star]) {
+        let instances: Vec<StarInstance> = stars.iter().map(StarInstance::from).collect();
+        self.stars = (!instances.is_empty()).then(|| {
+            let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("stars"),
+                contents: bytemuck::cast_slice(&instances),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+            (buffer, instances.len() as u32)
+        });
+    }
+
     pub fn max_texture_width(device: &wgpu::Device) -> u32 {
         device.limits().max_texture_dimension_2d
     }
@@ -652,6 +710,9 @@ impl Renderer {
             sky_right: (rotation * Vec3::X * (half_height * aspect)).extend(0.0).to_array(),
             sky_up: (rotation * Vec3::Y * half_height).extend(0.0).to_array(),
             sky_forward: (rotation * Vec3::NEG_Z).extend(0.0).to_array(),
+            star_rotation: Mat4::from_mat3(frame.stars.map_or(Mat3::IDENTITY, |stars| stars.rotation)).to_cols_array_2d(),
+            // Discs are sized for a view 1080 pixels high and grow with larger ones.
+            star_params: [frame.stars.map_or(0.0, |stars| stars.brightness.max(0.0)), (size.1 as f32 / 1080.0).max(1.0), 0.0, 0.0],
         };
         queue.write_buffer(&self.globals_buffer, 0, bytemuck::bytes_of(&globals));
 
@@ -723,6 +784,12 @@ impl Renderer {
             if frame.atmosphere.is_some() {
                 pass.set_pipeline(&self.pipelines.sky);
                 pass.draw(0..3, 0..1);
+            }
+            // Over the sky, which is what dims them; behind everything else.
+            if let (Some((stars, count)), Some(_)) = (&self.stars, frame.stars) {
+                pass.set_pipeline(&self.pipelines.stars);
+                pass.set_vertex_buffer(0, stars.slice(..));
+                pass.draw(0..4, 0..*count);
             }
 
             pass.set_pipeline(&self.pipelines.surface_lines);

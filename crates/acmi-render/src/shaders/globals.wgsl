@@ -21,6 +21,10 @@ struct Globals {
     sky_right: vec4<f32>,
     sky_up: vec4<f32>,
     sky_forward: vec4<f32>,
+    // Rotation from the equatorial frame of the star catalogue to the world.
+    star_rotation: mat4x4<f32>,
+    // x: brightness of the stars, y: scale of their discs on screen.
+    star_params: vec4<f32>,
 };
 
 @group(0) @binding(0) var<uniform> globals: Globals;

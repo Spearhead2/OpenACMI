@@ -11,13 +11,15 @@ pub mod geometry;
 pub mod mesh;
 pub mod normals;
 mod renderer;
+pub mod stars;
 mod terrain;
 
 pub use camera::Camera;
 pub use earth_texture::{load_earth_image, EarthImage};
 pub use geometry::{GridStyle, LineVertex, RibbonVertex, RtePosition};
 pub use mesh::{CpuMesh, MeshLibrary};
-pub use renderer::{Atmosphere, Frame, MeshId, ModelInstance, Renderer, RendererConfig, COLOR_FORMAT};
+pub use renderer::{Atmosphere, Frame, MeshId, ModelInstance, Renderer, RendererConfig, Stars, COLOR_FORMAT};
+pub use stars::Star;
 pub use terrain::{TerrainConfig, TerrainStats};
 
 pub use acmi_terrain;

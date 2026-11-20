@@ -176,6 +176,9 @@ pub struct Earth {
     pub atmosphere_strength: f32,
     /// Brightness of the sky and haze.
     pub atmosphere_exposure: f32,
+    /// The night sky: the stars seen with the naked eye, where they really are.
+    pub show_stars: bool,
+    pub star_brightness: f32,
 }
 
 impl Default for Earth {
@@ -186,6 +189,8 @@ impl Default for Earth {
             show_atmosphere: true,
             atmosphere_strength: 1.0,
             atmosphere_exposure: 1.0,
+            show_stars: true,
+            star_brightness: 1.0,
         }
     }
 }

@@ -367,7 +367,7 @@ fn lighting(ui: &mut egui::Ui, settings: &mut Settings) {
 fn atmosphere(ui: &mut egui::Ui, settings: &mut Settings) {
     let earth = &mut settings.earth;
     let mut do_reset = false;
-    section(ui, "Atmosphere and world map", false, || do_reset = true, |ui| {
+    section(ui, "Sky and world map", false, || do_reset = true, |ui| {
         row(ui, "Atmosphere", "Sky, haze and the blue rim of the planet", |ui| {
             ui.checkbox(&mut earth.show_atmosphere, "");
         });
@@ -376,6 +376,12 @@ fn atmosphere(ui: &mut egui::Ui, settings: &mut Settings) {
         });
         row(ui, "Sky brightness", "Brightness of the sky and haze", |ui| {
             ui.add(egui::Slider::new(&mut earth.atmosphere_exposure, 0.2..=3.0));
+        });
+        row(ui, "Stars", "The stars seen with the naked eye, placed for the recorded date and time", |ui| {
+            ui.checkbox(&mut earth.show_stars, "");
+        });
+        row(ui, "Star brightness", "Brightness of the stars", |ui| {
+            ui.add(egui::Slider::new(&mut earth.star_brightness, 0.2..=3.0));
         });
         row(ui, "World map image", "An equirectangular image to use instead of the bundled world map; empty for the bundled one", |ui| {
             text(ui, &mut earth.texture, "bundled map");
