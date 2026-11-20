@@ -119,11 +119,19 @@ pub struct General {
     pub background: Rgba,
     /// 4× multisampling of the 3D view. Takes effect on restart.
     pub antialiasing: bool,
+    /// Ask GitHub for the latest release when the program starts.
+    pub check_for_updates: bool,
 }
 
 impl Default for General {
     fn default() -> Self {
-        Self { units: Units::Aviation, user_data_dir: String::new(), background: Rgba::rgb(4, 5, 10), antialiasing: true }
+        Self {
+            units: Units::Aviation,
+            user_data_dir: String::new(),
+            background: Rgba::rgb(4, 5, 10),
+            antialiasing: true,
+            check_for_updates: true,
+        }
     }
 }
 

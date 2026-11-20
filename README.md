@@ -72,6 +72,7 @@ Linux and macOS are not packaged yet. The code is meant to be portable, but so f
 - A **head-up display** in the cockpit view: pitch ladder, flight path marker, heading, speed and altitude tapes, and a box on the secondary object. Weapons get a simpler one: a reticle, flight path marker, Mach, airspeed and altitude
 - **Right-click an object** to edit its identity or choose a different 3D model
 - A Preferences window for everything else; the window, its panels and all settings are remembered between runs
+- **Updates from inside the program**: a notice appears when a new release is out, and one click installs it. The check asks GitHub for the latest release when OpenACMI starts; switch it off under **About**. Nothing is installed without asking, and the download is checked against the release's SHA-256
 
 ---
 
@@ -217,6 +218,7 @@ The project is a workspace of five crates, each with one job:
 
 - [x] Windows release build
 - [x] Open recordings by double-click (Windows file association)
+- [x] Update check and one-click update (Windows release)
 - [x] Export of object telemetry to .csv
 - [x] Charting of object telemetry
 - [x] Save live data to file

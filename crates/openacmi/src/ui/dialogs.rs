@@ -7,6 +7,7 @@ use crate::app::App;
 pub fn show(app: &mut App, ctx: &egui::Context) {
     connection(app, ctx);
     super::preferences::show(app, ctx);
+    super::update_toast::about_window(app, ctx);
     super::edit_object::show(app, ctx);
     error(app, ctx);
 }

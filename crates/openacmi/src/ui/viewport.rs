@@ -78,6 +78,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
     }
     paint_status(app, &painter, rect, &ctx);
     paint_progress(app, &painter, rect);
+    super::update_toast::show(app, &ctx, rect);
     if app.terrain_busy() {
         // Keep drawing while terrain streams in, so it appears without input.
         ctx.request_repaint();
