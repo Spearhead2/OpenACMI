@@ -25,7 +25,11 @@ rfd.workspace = true
 rustc-hash.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+# The updater: fetching a release, checking its hash and unpacking it.
+sha2.workspace = true
 toml.workspace = true
+ureq.workspace = true
+zip.workspace = true
 
 [target.'cfg(windows)'.dependencies]
 # File associations: the registry, and telling Explorer about the change.

@@ -31,6 +31,8 @@ pub struct App {
     pub(crate) palette: Palette,
     pub(crate) meshes: MeshLibrary,
     assets: PathBuf,
+    /// Checks for and installs new releases.
+    pub(crate) updater: crate::update::Updater,
     /// Folder the user's own models and colours were read from.
     pub(crate) user_data: PathBuf,
     /// Number of model files found in [`Self::user_data`].
@@ -64,6 +66,8 @@ pub struct App {
     started: std::time::Instant,
     screenshot_done: Arc<AtomicBool>,
     screenshot_requested: bool,
+    /// The startup update check has not been made yet.
+    update_check_pending: bool,
 }
 
 impl App {
@@ -71,6 +75,9 @@ impl App {
         let settings_path = Settings::default_path();
         let settings = settings_path.as_deref().map(Settings::load).unwrap_or_default();
         let assets = find_assets_dir();
+        // What an update of the previous run left behind can go now.
+        crate::update::clean_up();
+        let updater = crate::update::Updater::new(args.pretend_version);
         let user_data = user_data_dir(&settings);
         log::info!("assets: {}, user data: {}", assets.display(), user_data.display());
 
@@ -115,6 +122,7 @@ impl App {
             palette,
             meshes,
             assets,
+            updater,
             user_data,
             user_models,
             render_state,
@@ -135,6 +143,7 @@ impl App {
             started: std::time::Instant::now(),
             screenshot_done: Arc::new(AtomicBool::new(false)),
             screenshot_requested: false,
+            update_check_pending: true,
         };
         app.ui.preferences_open = app.args.preferences;
         ui::preferences::EXPAND_ALL.store(app.args.preferences, Ordering::Relaxed);
@@ -516,6 +525,33 @@ impl App {
         }
     }
 
+    /// Checks for an update once, at the first frame, if the user wants that.
+    fn handle_updates(&mut self, ctx: &egui::Context) {
+        if !std::mem::take(&mut self.update_check_pending) {
+            // `--update-now`: do not wait for the button.
+            if self.args.update_now && !self.updater.busy() {
+                self.args.update_now = false;
+                if let crate::update::Status::Available(release) = self.updater.status() {
+                    self.updater.install(ctx, release);
+                }
+            }
+            return;
+        }
+        if self.settings.general.check_for_updates {
+            self.updater.check(ctx);
+        }
+    }
+
+    /// Starts the program again and closes this one: after an update.
+    pub(crate) fn restart(&mut self, ctx: &egui::Context) {
+        self.save_settings();
+        if crate::update::restart() {
+            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+        } else {
+            self.ui.error = Some("OpenACMI could not restart itself. Close it and open it again to use the new version.".to_owned());
+        }
+    }
+
     /// `--screenshot`: once nothing is loading any more, capture the window and quit.
     fn handle_screenshot(&mut self, ctx: &egui::Context) {
         const SETTLE_FRAMES: u32 = 10;
@@ -525,7 +561,8 @@ impl App {
             return;
         }
         ctx.request_repaint();
-        let busy = self.load_job.is_some() || self.earth_image.is_some() || self.terrain_busy();
+        let updating = self.updater.busy() || self.update_check_pending || self.args.update_now;
+        let busy = self.load_job.is_some() || self.earth_image.is_some() || self.terrain_busy() || updating;
         self.frame_count += 1;
         self.settled_frames = if busy { 0 } else { self.settled_frames + 1 };
         if self.settled_frames >= SETTLE_FRAMES && !self.screenshot_requested {
@@ -562,6 +599,7 @@ impl eframe::App for App {
         egui::CentralPanel::no_frame().show(ui, |ui| ui::viewport::show(self, ui));
         ui::dialogs::show(self, &ctx);
 
+        self.handle_updates(&ctx);
         self.update_window_title(&ctx);
         self.handle_screenshot(&ctx);
     }

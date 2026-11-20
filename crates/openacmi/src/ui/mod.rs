@@ -14,6 +14,7 @@ pub mod tile_cache;
 pub mod side_panel;
 pub mod timeline_bar;
 pub mod toolbar;
+pub mod update_toast;
 pub mod view_options;
 pub mod viewport;
 
@@ -29,6 +30,10 @@ pub struct UiState {
     pub error: Option<String>,
     pub connection_open: bool,
     pub preferences_open: bool,
+    pub about_open: bool,
+    /// The user asked for an update check, so its outcome is shown even
+    /// when there is nothing new.
+    pub update_check_requested: bool,
     /// Who opens `.acmi` files, looked up when Preferences needs it.
     pub association: Option<crate::file_association::Association>,
     /// Size of the tile cache, measured when Preferences shows it.

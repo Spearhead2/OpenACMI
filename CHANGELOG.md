@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Updates: OpenACMI checks GitHub for a newer release when it starts and shows a notice in the corner of the 3D view, with buttons to install it, read the release notes or dismiss it. Installing downloads the release, checks it against its published SHA-256 and replaces the program's files in the background; the new version runs after a restart
+- An About menu, with the version, the switch for the update check and "Check for Updates Now"
+
 ---
 
 ## [v0.2.2] - 2026-11-20

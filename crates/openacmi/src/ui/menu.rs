@@ -22,6 +22,14 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             ui.checkbox(&mut panels.track_selection, "Primary / Secondary Track Selection");
             ui.checkbox(&mut panels.render_info, "Render Information");
         });
+        ui.menu_button("About", |ui| {
+            if ui.button("About OpenACMI…").clicked() {
+                app.ui.about_open = true;
+                ui.close();
+            }
+            ui.separator();
+            super::update_toast::updates(app, ui);
+        });
     });
 }
 

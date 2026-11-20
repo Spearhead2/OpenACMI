@@ -19,6 +19,7 @@ mod session;
 mod sun;
 mod timeline;
 mod ui;
+mod update;
 
 use std::path::PathBuf;
 
@@ -45,6 +46,10 @@ pub struct Args {
     pub preferences: bool,
     /// Development aid: object id (hex) to select as the secondary object.
     pub secondary: Option<u64>,
+    /// Development aid: check for updates as if this were another version.
+    pub pretend_version: Option<update::Version>,
+    /// Development aid: install an update as soon as one is found.
+    pub update_now: bool,
 }
 
 impl Args {
@@ -57,6 +62,8 @@ impl Args {
                 "--seek" => args.seek = raw.next().and_then(|v| v.parse().ok()),
                 "--preferences" => args.preferences = true,
                 "--cockpit" => args.cockpit = true,
+                "--pretend-version" => args.pretend_version = raw.next().and_then(|v| update::Version::parse(&v)),
+                "--update-now" => args.update_now = true,
                 "--look" => {
                     let numbers: Vec<f64> = raw.next().unwrap_or_default().split(',').filter_map(|v| v.parse().ok()).collect();
                     if let [yaw, pitch, scale] = numbers[..] {
