@@ -1,4 +1,4 @@
-//! Prints elevation statistics of a region, for tuning `acmi-terrain/src/depressions.rs`.
+//! Prints elevation statistics of a region, for tuning the basins and lakes in `acmi-terrain/src/surface.rs`.
 //!
 //! `cargo run -p acmi-terrain --example probe -- <cache dir> <zoom> <west> <south> <east> <north>`
 
@@ -13,6 +13,8 @@ fn main() {
     let (first, ..) = TileKey::locate(zoom, north, west).expect("in range");
     let (last, ..) = TileKey::locate(zoom, south, east).expect("in range");
     let mut below = Vec::new();
+    // Every height, in 1 m bins: a lake above sea level is a spike here.
+    let mut all = std::collections::BTreeMap::<i32, usize>::new();
     let mut total = 0usize;
     for y in first.y..=last.y {
         for x in first.x..=last.x {
@@ -28,6 +30,7 @@ fn main() {
                     }
                     total += 1;
                     let height = tile.pixel(column as isize, row as isize);
+                    *all.entry(height.floor() as i32).or_default() += 1;
                     if height <= 0.0 {
                         below.push(height);
                     }
@@ -37,6 +40,12 @@ fn main() {
     }
     below.sort_by(f32::total_cmp);
     println!("{total} samples, {} at or below sea level", below.len());
+    let mut common: Vec<_> = all.into_iter().collect();
+    common.sort_by_key(|&(_, count)| std::cmp::Reverse(count));
+    println!("most common heights:");
+    for (height, count) in common.iter().take(6) {
+        println!("  {height:>6} m: {:.1}%", *count as f64 * 100.0 / total.max(1) as f64);
+    }
     if below.is_empty() {
         return;
     }

@@ -3,7 +3,7 @@ resolver = "2"
 members = ["crates/acmi-core", "crates/acmi-io", "crates/acmi-terrain", "crates/acmi-render", "crates/openacmi"]
 
 [workspace.package]
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 license = "MIT"
 description = "A community-built alternative to Tacview: replay flights, analyse engagements and monitor live ACMI 2.x telemetry."
