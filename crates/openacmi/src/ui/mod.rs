@@ -10,6 +10,7 @@ pub mod hud;
 pub mod menu;
 pub mod panels;
 pub mod preferences;
+pub mod tile_cache;
 pub mod side_panel;
 pub mod timeline_bar;
 pub mod toolbar;
@@ -30,6 +31,8 @@ pub struct UiState {
     pub preferences_open: bool,
     /// Who opens `.acmi` files, looked up when Preferences needs it.
     pub association: Option<crate::file_association::Association>,
+    /// Size of the tile cache, measured when Preferences shows it.
+    pub tile_cache: tile_cache::TileCache,
     /// The object being edited in the Edit Object window, if it is open.
     pub edit_object: Option<edit_object::EditObject>,
     /// The right button was held while the wheel zoomed, so releasing it

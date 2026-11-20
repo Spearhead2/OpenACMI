@@ -364,12 +364,25 @@ impl Terrain {
         if folder.is_empty() {
             folder.push_str("imagery");
         }
-        let base = if self.cache_dir.is_empty() {
-            directories::ProjectDirs::from("", "", "OpenACMI")?.cache_dir().join("imagery")
+        Some(self.imagery_cache_base()?.join(folder))
+    }
+
+    /// Folder holding one imagery cache per server.
+    fn imagery_cache_base(&self) -> Option<PathBuf> {
+        if self.cache_dir.is_empty() {
+            Some(directories::ProjectDirs::from("", "", "OpenACMI")?.cache_dir().join("imagery"))
         } else {
-            PathBuf::from(&self.cache_dir).join("imagery")
-        };
-        Some(base.join(folder))
+            Some(PathBuf::from(&self.cache_dir).join("imagery"))
+        }
+    }
+
+    /// Every folder tiles are cached in: the elevation cache, and the
+    /// imagery cache of each server that has been used.
+    pub fn cache_folders(&self) -> Vec<PathBuf> {
+        let mut folders: Vec<PathBuf> = self.resolved_cache_dir().into_iter().collect();
+        let servers = self.imagery_cache_base().and_then(|base| std::fs::read_dir(base).ok());
+        folders.extend(servers.into_iter().flatten().flatten().map(|entry| entry.path()).filter(|path| path.is_dir()));
+        folders
     }
 }
 
