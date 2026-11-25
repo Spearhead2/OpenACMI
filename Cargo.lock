@@ -15,7 +15,7 @@ dependencies = [
 
 [[package]]
 name = "acmi-core"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "glam",
  "log",
@@ -25,7 +25,7 @@ dependencies = [
 
 [[package]]
 name = "acmi-io"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "acmi-core",
  "log",
@@ -35,7 +35,7 @@ dependencies = [
 
 [[package]]
 name = "acmi-render"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "acmi-core",
  "acmi-terrain",
@@ -51,7 +51,7 @@ dependencies = [
 
 [[package]]
 name = "acmi-terrain"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "acmi-core",
  "image",
@@ -2147,7 +2147,7 @@ checksum = "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe"
 
 [[package]]
 name = "openacmi"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "acmi-core",
  "acmi-io",

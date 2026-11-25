@@ -535,6 +535,24 @@ mod tests {
     }
 
     #[test]
+    fn every_bundled_model_loads() {
+        let folder = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/meshes");
+        let mut models = 0;
+        for entry in std::fs::read_dir(&folder).unwrap().flatten() {
+            let path = entry.path();
+            if !path.extension().is_some_and(|extension| extension == "obj" || extension == "glb") {
+                continue;
+            }
+            let mesh = load_model(&path).unwrap_or_else(|err| panic!("{}: {err}", path.display()));
+            let radius = mesh.vertices.iter().map(|vertex| Vec3::from_array(vertex.position).length()).fold(0.0, f32::max);
+            assert!(mesh.vertices.len() >= 3 && mesh.vertices.len().is_multiple_of(3), "{}", path.display());
+            assert!(radius.is_finite() && radius > 0.0, "{}: radius {radius}", path.display());
+            models += 1;
+        }
+        assert!(models >= 20, "only {models} models in {}", folder.display());
+    }
+
+    #[test]
     fn missing_generic_models_fall_back_to_the_next_that_fits() {
         let library = library(&["Core.FixedWing", "Core.Human", "Core.Missile", "Core.Vehicle"]);
         let stem = |tags: &str| {
