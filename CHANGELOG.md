@@ -11,6 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v0.3.1] - 2026-11-24
+
+### Changed
+- The bundled generic shapes: the bomb, human, missile, helicopter, torpedo and vehicle are redrawn
+
+### Removed
+- Seven bundled shapes are withdrawn: artillery, infantry, pyramid, rocket pod, FPU-610 drop tank, whale and an unused fixed-wing placeholder. Objects that used them fall back to the nearest remaining shape. A copy updated from an earlier version deletes these files when it starts
+
+---
+
 ## [v0.3.0] - 2026-11-20
 
 ### Added
@@ -87,6 +97,7 @@ Initial source release. OpenACMI is now written in Rust, on wgpu and egui.
 
 ---
 
+[v0.3.1]: https://github.com/Spearhead2/OpenACMI/releases/tag/v0.3.1
 [v0.3.0]: https://github.com/Spearhead2/OpenACMI/releases/tag/v0.3.0
 [v0.2.2]: https://github.com/Spearhead2/OpenACMI/releases/tag/v0.2.2
 [v0.2.1]: https://github.com/Spearhead2/OpenACMI/releases/tag/v0.2.1
