@@ -37,6 +37,17 @@ const PACKAGE_SUFFIX: &str = "-windows-x64.zip";
 const OLD_SUFFIX: &str = "openacmi-old";
 /// Folder inside the program folder where a download is unpacked.
 const STAGING_FOLDER: &str = ".openacmi-update";
+/// Files earlier releases shipped that later ones withdrew. An update only
+/// replaces files, so these are deleted from an updated copy at startup.
+const RETIRED_FILES: &[&str] = &[
+    "assets/meshes/Core.Artillery.obj",
+    "assets/meshes/Core.Infantry.obj",
+    "assets/meshes/Core.NeedToBeFixedWing.obj",
+    "assets/meshes/Core.Pyramid.obj",
+    "assets/meshes/Other.DropTank.FPU610.obj",
+    "assets/meshes/Other.RocketPod.obj",
+    "assets/meshes/Other.Whale.obj",
+];
 /// Releases are about 13 MB; anything far beyond that is not one.
 const MAX_PACKAGE_BYTES: u64 = 300 * 1024 * 1024;
 
@@ -407,6 +418,20 @@ pub fn clean_up() {
     let Some(folder) = install_folder() else { return };
     let _ = std::fs::remove_dir_all(folder.join(STAGING_FOLDER));
     remove_moved_aside(&folder, 0);
+    remove_retired(&folder);
+}
+
+/// Deletes the files of earlier releases that are no longer shipped.
+fn remove_retired(folder: &Path) {
+    for file in RETIRED_FILES {
+        let path = folder.join(file);
+        if path.is_file() {
+            match std::fs::remove_file(&path) {
+                Ok(()) => log::info!("removed {}, which is no longer part of OpenACMI", path.display()),
+                Err(err) => log::warn!("cannot remove {}: {err}", path.display()),
+            }
+        }
+    }
 }
 
 fn remove_moved_aside(folder: &Path, depth: usize) {
@@ -616,6 +641,25 @@ mod tests {
     #[test]
     fn the_hash_is_the_usual_sha256() {
         assert_eq!(sha256_hex(b"abc"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+    }
+
+    #[test]
+    fn withdrawn_files_are_removed_from_an_updated_copy() {
+        let folder = Scratch::new("retired");
+        folder.write("assets/meshes/Other.Whale.obj", "withdrawn");
+        folder.write("assets/meshes/Core.Pyramid.obj", "withdrawn");
+        folder.write("assets/meshes/Core.Cube.obj", "still shipped");
+        folder.write("my-models/Other.Whale.obj", "the user's own");
+        remove_retired(&folder.0);
+        assert_eq!(folder.read("assets/meshes/Other.Whale.obj"), None);
+        assert_eq!(folder.read("assets/meshes/Core.Pyramid.obj"), None);
+        assert_eq!(folder.read("assets/meshes/Core.Cube.obj").as_deref(), Some("still shipped"));
+        assert_eq!(folder.read("my-models/Other.Whale.obj").as_deref(), Some("the user's own"));
+        // The withdrawn files are really gone from this checkout's assets.
+        let assets = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        for file in RETIRED_FILES {
+            assert!(!assets.join(file).exists(), "{file} is still shipped");
+        }
     }
 
     #[test]
